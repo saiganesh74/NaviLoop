@@ -1,4 +1,4 @@
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// ✅ Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyDRqdgXPnn1tiqKOreGOcyJifbEuyy_TdI",
   authDomain: "naviloop-test.firebaseapp.com",
@@ -10,31 +10,37 @@ const firebaseConfig = {
   measurementId: "G-M6HD0F04CE"
 };
 
-const app = firebase.initializeApp(firebaseConfig);
+// ✅ Initialize Firebase
+firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
-let map ; 
-let marker ;
- 
-function initMap(){
-    map = new google.maps.Map(document.getElementById("map")),{
-        zoom : 16 ,
-        center: {lat : 0 , lng : 0}
-    }
-}
+// ✅ Initialize Leaflet Map (Centered on Hyderabad)
+const map = L.map('map').setView([17.3850, 78.4867], 16);
 
-marker = new google.maps.Marker({
-    position : {lat : 0 , lng :0},
-    map : map,
-    title : 'Bus Location '
-})
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
 
-  const busRef = database.ref("bus1");
-  busRef.on("value", (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-      const newLatLng = new google.maps.LatLng(data.latitude, data.longitude);
-      marker.setPosition(newLatLng);
-      map.setCenter(newLatLng);
-    }
-  });
+// ✅ Bus Icon (optional custom marker)
+const busIcon = L.icon({
+  iconUrl: 'https://cdn-icons-png.flaticon.com/512/61/61205.png',
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -40]
+});
+
+// ✅ Initialize Marker
+let marker = L.marker([17.3850, 78.4867], { icon: busIcon }).addTo(map)
+  .bindPopup('Bus Location')
+  .openPopup();
+
+// ✅ Listen to Firebase for updates
+const busRef = database.ref("bus1");
+busRef.on("value", (snapshot) => {
+  const data = snapshot.val();
+  if (data && data.latitude && data.longitude) {
+    const newLatLng = [data.latitude, data.longitude];
+    marker.setLatLng(newLatLng);
+    map.setView(newLatLng);
+  }
+});
