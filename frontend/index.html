@@ -1,17 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NaviLoop Live Tracker</title>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDRqdgXPnn1tiqKOreGOcyJifbEuyy_TdI"></script>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>NaviLoop: Live Bus Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ✅ Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- ✅ Your styles -->
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>NaviLoop: Live Bus Tracker</h1>
+  <h1 style="text-align:center; font-family:Arial;">🚌 NaviLoop: Live Bus Tracker</h1>
   <div id="map"></div>
+
+  <!-- ✅ Firebase v8 SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <!-- ✅ Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- ✅ Your logic -->
   <script src="app.js"></script>
 </body>
 </html>
