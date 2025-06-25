@@ -2,33 +2,40 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>NaviLoop Login</title>
+  <title>Login | NaviLoop</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="main-container">
+    <div class="left-section">
+      <div class="logo">
+        <h1>NaviLoop</h1>
+        <p>Track your college buses in real-time.<br>Safe, Smart, Efficient Transport.</p>
+      </div>
+    </div>
 
-  <!-- Firebase SDKs -->
+    <div class="right-section">
+      <form class="form-card" id="login-form">
+        <h2>Login to NaviLoop</h2>
+        <input type="email" id="email" placeholder="Email address" required />
+        <input type="password" id="password" placeholder="Password" required />
+
+        <button type="submit">Sign In</button>
+
+        <p class="login-link">Don't have an account? <a href="signup.html">Sign Up</a></p>
+
+        <hr style="margin: 20px 0;" />
+        <button type="button" id="googleBtn" style="background: #4285F4;">Sign in with Google</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-</head>
-<body>
-  <div class="container">
-    <h2>NaviLoop Login</h2>
-
-    <input type="email" id="email" placeholder="Email" required />
-    <input type="password" id="password" placeholder="Password" required />
-
-    <div class="buttons">
-      <button id="signinBtn">Sign In</button>
-      <button id="signupPageBtn">Go to Sign Up</button>
-    </div>    
-
-    <p class="or">OR</p>
-
-    <button class="google" id="googleBtn">Continue with Google</button>
-  </div>
-
-  <script src="firebase-config.js"></script>
   <script src="login.js"></script>
 </body>
 </html>

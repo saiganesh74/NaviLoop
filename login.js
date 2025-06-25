@@ -1,9 +1,19 @@
-// login.js
-document.getElementById("signupPageBtn").addEventListener("click", () => {
-  window.location.href = "signup.html";
-});
+const firebaseConfig = {
+  apiKey: "AIzaSyDRqdgXPnn1tiqKOreGOcyJifbEuyy_TdI",
+  authDomain: "naviloop-test.firebaseapp.com",
+  databaseURL: "https://naviloop-test-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "naviloop-test",
+  storageBucket: "naviloop-test.firebasestorage.app",
+  messagingSenderId: "116376630309",
+  appId: "1:116376630309:web:e7f9365947502ace11bbcc"
+};
 
-document.getElementById("signinBtn").addEventListener("click", () => {
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const database = firebase.database();
+
+document.getElementById("login-form").addEventListener("submit", (e) => {
+  e.preventDefault();
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
 
@@ -13,7 +23,6 @@ document.getElementById("signinBtn").addEventListener("click", () => {
       window.location.href = "map.html";
     })
     .catch((error) => {
-      console.error("Login Error:", error.message);
       alert("Login Error: " + error.message);
     });
 });

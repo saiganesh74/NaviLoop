@@ -2,29 +2,36 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>NaviLoop Signup</title>
+  <title>Sign Up | NaviLoop</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
-
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
-  <div class="container">
-    <h2>NaviLoop Signup</h2>
+  <div class="main-container">
+    <div class="left-section">
+      <div class="logo">
+        <h1>NaviLoop</h1>
+        <p>Track your college buses in real-time.<br>Safe, Smart, Efficient Transport.</p>
+      </div>
+    </div>
 
-    <input type="email" id="email" placeholder="Email" required />
-    <input type="password" id="password" placeholder="Password" required />
-
-    <div class="buttons">
-      <button id="signupBtn">Sign Up</button>
-      <button id="backBtn">Back to Login</button>
+    <div class="right-section">
+      <form class="form-card" id="signup-form">
+        <h2>Create an Account</h2>
+        <input type="email" id="email" placeholder="Email address" required />
+        <input type="password" id="password" placeholder="Password" required />
+        <input type="password" id="confirmPassword" placeholder="Confirm Password" required />
+        <button type="submit">Sign Up</button>
+        <p class="login-link">Already have an account? <a href="index.html">Login</a></p>
+      </form>
     </div>
   </div>
 
-  <script src="firebase-config.js"></script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="signup.js"></script>
 </body>
 </html>
