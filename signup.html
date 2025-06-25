@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>NaviLoop Login</title>
+  <title>NaviLoop Signup</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
 
@@ -13,22 +13,18 @@
 </head>
 <body>
   <div class="container">
-    <h2>NaviLoop Login</h2>
+    <h2>NaviLoop Signup</h2>
 
     <input type="email" id="email" placeholder="Email" required />
     <input type="password" id="password" placeholder="Password" required />
 
     <div class="buttons">
-      <button id="signinBtn">Sign In</button>
-      <button id="signupPageBtn">Go to Sign Up</button>
-    </div>    
-
-    <p class="or">OR</p>
-
-    <button class="google" id="googleBtn">Continue with Google</button>
+      <button id="signupBtn">Sign Up</button>
+      <button id="backBtn">Back to Login</button>
+    </div>
   </div>
 
   <script src="firebase-config.js"></script>
-  <script src="login.js"></script>
+  <script src="signup.js"></script>
 </body>
 </html>
