@@ -1,4 +1,4 @@
-# NaviLoop: Smart Campus Bus Tracking System (IoT + Firebase)
+<h1 align= 'center'> NaviLoop: Smart Campus Bus Tracking System (IoT + Firebase)</h1>
 
 **NaviLoop** is an innovative, real-time bus tracking solution built using IoT technology. Designed for educational campuses, it enables students and staff to view the live location of college buses through a web interface powered by Firebase and Google Maps.
 
