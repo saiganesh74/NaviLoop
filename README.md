@@ -1,4 +1,4 @@
-# NaviLoop: Smart Campus Bus Tracking System (IoT + Firebase)
+<h1 align= 'center'> NaviLoop: Smart Campus Bus Tracking System (IoT + Firebase)</h1>
 
 **NaviLoop** is an innovative, real-time bus tracking solution built using IoT technology. Designed for educational campuses, it enables students and staff to view the live location of college buses through a web interface powered by Firebase and Google Maps.
 
@@ -13,12 +13,13 @@
 - ESP32 DevKit V1
 - NEO-6M GPS Module
 - Firebase Realtime Database
-- Google Maps JavaScript API
+- Leaflet API for maps
 - Python (for GPS simulation)
 - HTML, CSS, JavaScript
 
 ## 📷 Preview
-> *(Will insert a screenshot of the live map once its ready)*
+> ![image](https://github.com/user-attachments/assets/43e2f35d-86a9-49d3-a6d9-1307bdb3023e)
+
 
 ## 🧪 Getting Started
 1. Clone this repo
@@ -34,8 +35,8 @@
 
 ## 👥 Team NaviLoop
 - Sai Ganesh R — Developer & Lead
-- Abhinay L
-- Archana
+- Abhinay L - Dev 
+- Archana - Dev
 
 ---
 
