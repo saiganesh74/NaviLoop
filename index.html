@@ -2,27 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>NaviLoop: Live Bus Tracker</title>
+  <title>NaviLoop Login</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- ✅ Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
-  <!-- ✅ Your styles -->
   <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <h1 style="text-align:center; font-family:Arial;">🚌 NaviLoop: Live Bus Tracker</h1>
-  <div id="map"></div>
 
-  <!-- ✅ Firebase v8 SDKs -->
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
 
-  <!-- ✅ Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<body>
+  <div class="container">
+    <h2>NaviLoop Login</h2>
 
-  <!-- ✅ Your logic -->
+    <input type="email" id="email" placeholder="Email" required />
+    <input type="password" id="password" placeholder="Password" required />
+
+    <div class="buttons">
+      <button id="signupBtn">Sign Up</button>
+      <button id="signinBtn">Sign In</button>
+    </div>    
+
+    <p class="or">OR</p>
+
+    <button class="google" id="googleBtn">Continue with Google</button>
+  </div>
+
+  <!-- Link to JS -->
   <script src="app.js"></script>
 </body>
 </html>

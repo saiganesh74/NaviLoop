@@ -1,3 +1,5 @@
+// ✅ Firebase config
+console.log("Script loaded");
 const firebaseConfig = {
   apiKey: "AIzaSyDRqdgXPnn1tiqKOreGOcyJifbEuyy_TdI",
   authDomain: "naviloop-test.firebaseapp.com",
@@ -9,36 +11,66 @@ const firebaseConfig = {
   measurementId: "G-M6HD0F04CE"
 };
 
+// ✅ Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
+const auth = firebase.auth();
 
-// ✅Initialize Leaflet Map (Centered on Hyderabad)
-const map = L.map('map').setView([17.3850, 78.4867], 16);
+// ✅ Signup
+document.getElementById("signupBtn").addEventListener("click", () => {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
-
-// ✅ Bus Icon (optional custom marker)
-const busIcon = L.icon({
-  iconUrl: 'https://cdn-icons-png.flaticon.com/512/61/61205.png',
-  iconSize: [40, 40],
-  iconAnchor: [20, 40],
-  popupAnchor: [0, -40]
+  auth.createUserWithEmailAndPassword(email, password)
+    .then((userCredential) => {
+      const user = userCredential.user;
+      const userData = {
+        email: user.email,
+        uid: user.uid,
+        method: "email",
+        createdAt: new Date().toISOString()
+      };
+      database.ref("users/" + user.uid).set(userData);
+      alert("Signup successful!");
+      window.location.href = "map.html";
+    })
+    .catch((error) => {
+      alert("Signup Error: " + error.message);
+    });
 });
 
-// ✅ Initialize Marker
-let marker = L.marker([17.3850, 78.4867], { icon: busIcon }).addTo(map)
-  .bindPopup('Bus Location')
-  .openPopup();
+// ✅ Signin
+document.getElementById("signinBtn").addEventListener("click", () => {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
 
-// ✅ Listen to Firebase for updates
-const busRef = database.ref("bus1");
-busRef.on("value", (snapshot) => {
-  const data = snapshot.val();
-  if (data && data.latitude && data.longitude) {
-    const newLatLng = [data.latitude, data.longitude];
-    marker.setLatLng(newLatLng);
-    map.setView(newLatLng);
-  }
+  auth.signInWithEmailAndPassword(email, password)
+    .then(() => {
+      alert("Login successful!");
+      window.location.href = "map.html";
+    })
+    .catch((error) => {
+      alert("Login Error: " + error.message);
+    });
+});
+
+// ✅ Google Login
+document.getElementById("googleBtn").addEventListener("click", () => {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider)
+    .then((result) => {
+      const user = result.user;
+      const userData = {
+        email: user.email,
+        uid: user.uid,
+        method: "google",
+        createdAt: new Date().toISOString()
+      };
+      database.ref("users/" + user.uid).set(userData);
+      alert("Google Login successful!");
+      window.location.href = "map.html";
+    })
+    .catch((error) => {
+      alert("Google Login Error: " + error.message);
+    });
 });
