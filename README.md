@@ -18,7 +18,7 @@
 - HTML, CSS, JavaScript
 
 ## 📷 Preview
-> ![image](https://github.com/user-attachments/assets/43e2f35d-86a9-49d3-a6d9-1307bdb3023e)
+> ![image](https://github.com/user-attachments/assets/41f8a2da-c15f-4651-9c70-4f951d9036fe)
 
 
 ## 🧪 Getting Started
