@@ -119,7 +119,9 @@ footer {
   }
 
   .hamburger {
-    display: block;
+    display: inline-flex; 
+           position: absolute;
+        right: 1rem;
   }
 
   main.map-container {
@@ -128,5 +130,6 @@ footer {
 
   #map {
     height: 350px;
+    width: 90vw;
   }
 }
