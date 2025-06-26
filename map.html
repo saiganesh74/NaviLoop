@@ -4,214 +4,51 @@
   <meta charset="UTF-8" />
   <title>NaviLoop | Live Bus Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <!-- Leaflet CSS -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-
-  <!-- Inline CSS (same as your current one) -->
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      font-family: 'Poppins', sans-serif;
-  background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    header {
-      background-color: #111827;
-      color: white;
-      padding: 1rem 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .nav {
-      display: flex;
-      gap: 1.5rem;
-      align-items: center;
-    }
-
-    .nav a {
-      font-family: 'Poppins', sans-serif;
-      color: white;
-      text-decoration: none;
-      font-weight: 500;
-    }
-
-    .nav a:hover { text-decoration: underline; }
-
-    .logout-btn {
-      background-color: #ef4444;
-      border: none;
-      color: white;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    .container {
-      flex: 1;
-      padding: 2rem;
-      max-width: 1000px;
-      margin: auto;
-    }
-
-    h2 {
-      text-align: center;
-      color: #1e293b;
-      margin-bottom: 1rem;
-    }
-
-    #map {
-      width: 800px;
-      height: 650px;
-      border-radius: 5px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      margin-top: 1rem;
-      border:1px solid #111827;
-    }
-
-    .bus-select {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 1rem;
-    }
-
-    select {
-      padding: 0.5rem;
-      font-size: 1rem;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-    }
-
-    footer {
-      background-color: #111827;
-      color: white;
-      text-align: center;
-      padding: 1rem;
-      font-size: 0.875rem;
-    }
-    @media (max-width: 768px) {
-  header {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 1rem;
-  }
-
-  .nav {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-    width: 100%;
-    margin-top: 1rem;
-  }
-
-  .logout-btn {
-    width: 100%;
-    margin-top: 1rem;
-  }
-
-  .container {
-    padding: 1rem;
-  }
-
-  h2 {
-    font-size: 1.2rem;
-    text-align: left;
-    padding-left: 0.5rem;
-  }
-
-  .bus-select {
-    flex-direction: column;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-    padding-left: 0.5rem;
-  }
-
-  select {
-    width: 100%;
-    font-size: 1rem;
-    padding: 0.5rem;
-    margin-top: 0.5rem;
-  }
-
-  #map {
-    height: 300px;
-    width: 100%;
-    margin-top: 1rem;
-  }
-
-  footer {
-    padding: 0.75rem;
-    font-size: 0.75rem;
-  }
-}
-
-
-    @media (max-width: 768px) {
-      header { flex-direction: column; align-items: flex-start; }
-      .nav { flex-direction: column; width: 100%; margin-top: 1rem; }
-      #map { height: 300px; }
-    }
-  </style>
-
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="css/map.css" />
 </head>
 
 <body>
   <header>
-    <div><strong>NaviLoop</strong></div>
-    <nav class="nav">
+    <div class="logo">NaviLoop</div>
+    <nav class="navbar" id="navbar">
       <a href="#">Live Map</a>
       <a href="#">Bus Schedule</a>
       <a href="#">Profile</a>
       <a href="#">Settings</a>
       <button class="logout-btn" onclick="logout()">Logout</button>
     </nav>
+    <div class="hamburger" onclick="toggleMenu()">☰</div>
   </header>
 
-  <div class="container">
-    <h2>Live Bus Location</h2>
-
-    <!-- Dropdown -->
-    <div class="bus-select">
-      <select id="busSelector">
-        <option value="bus1">Bus 1</option>
-        <option value="bus2">Bus 2</option>
-        <option value="bus3">Bus 3</option>
-      </select>
-    </div>
-
+  <main class="map-container">
+    <h2>Track Your Bus</h2>
+    <select id="busSelector">
+      <option value="bus1">Bus 1</option>
+      <option value="bus2">Bus 2</option>
+      <option value="bus3">Bus 3</option>
+      <option value="bus4">Bus 4</option>
+    </select>
     <div id="map"></div>
-  </div>
+  </main>
 
   <footer>
     © 2025 NaviLoop | All rights reserved.
   </footer>
 
-  <!-- Firebase SDKs -->
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
   <script>
-    // Logout function
-    function logout() {
-      alert("Logging out...");
-      window.location.href = "index.html";
-    }
-
-    // Firebase Config
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyDRqdgXPnn1tiqKOreGOcyJifbEuyy_TdI",
       authDomain: "naviloop-test.firebaseapp.com",
       databaseURL: "https://naviloop-test-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "naviloop-test",
-      storageBucket: "naviloop-test.firebasestorage.app",
+      storageBucket: "naviloop-test.appspot.com",
       messagingSenderId: "116376630309",
       appId: "1:116376630309:web:e7f9365947502ace11bbcc"
     };
@@ -219,37 +56,44 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Map init
-    const map = L.map('map').setView([17.385044, 78.486671], 13);
+    // Logout
+    function logout() {
+      alert("Logged out.");
+      window.location.href = "index.html";
+    }
+
+    // Toggle hamburger
+    function toggleMenu() {
+      const nav = document.getElementById("navbar");
+      nav.classList.toggle("show");
+    }
+
+    // Leaflet
+    const map = L.map('map').setView([17.385044, 78.486671], 14);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
-    const marker = L.marker([17.385044, 78.486671]).addTo(map).bindPopup("Tracking Bus...").openPopup();
 
-    let currentRef = null;
+    let marker = L.marker([17.385044, 78.486671]).addTo(map).bindPopup("Bus location");
 
-    function trackBus(busId) {
-      if (currentRef) currentRef.off(); // Remove previous listener
-      currentRef = db.ref(busId);
-
-      currentRef.on("value", (snapshot) => {
+    const busSelector = document.getElementById("busSelector");
+    function listenToBus(busId) {
+      db.ref(busId).on("value", (snapshot) => {
         const data = snapshot.val();
         if (data && data.latitude && data.longitude) {
-          const latlng = [data.latitude, data.longitude];
-          marker.setLatLng(latlng);
-          map.setView(latlng, 15);
+          const coords = [data.latitude, data.longitude];
+          marker.setLatLng(coords);
+          map.setView(coords, 15);
         }
       });
     }
 
-    // Bus Selector Listener
-    document.getElementById("busSelector").addEventListener("change", (e) => {
-      const selectedBus = e.target.value;
-      trackBus(selectedBus);
+    busSelector.addEventListener("change", (e) => {
+      listenToBus(e.target.value);
     });
 
-    // Track default (bus1) on load
-    trackBus("bus1");
+    // Default
+    listenToBus("bus1");
   </script>
 </body>
 </html>
