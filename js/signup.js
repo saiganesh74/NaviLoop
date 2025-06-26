@@ -3,23 +3,21 @@ const firebaseConfig = {
   authDomain: "naviloop-test.firebaseapp.com",
   databaseURL: "https://naviloop-test-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "naviloop-test",
-  storageBucket: "naviloop-test.firebasestorage.app",
+  storageBucket: "naviloop-test.appspot.com",
   messagingSenderId: "116376630309",
-  appId: "1:116376630309:web:e7f9365947502ace11bbcc"
+  appId: "1:116376630309:web:e7f9365947502ace11bbcc",
 };
 
 firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
 const auth = firebase.auth();
+const db = firebase.database();
 
-document.getElementById("signup-form").addEventListener("submit", (e) => {
-  e.preventDefault();
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
-  const confirmPassword = document.getElementById("confirmPassword").value.trim();
+document.getElementById("signupBtn").addEventListener("click", () => {
+  const email = document.getElementById("signupEmail").value.trim();
+  const password = document.getElementById("signupPassword").value.trim();
 
-  if (password !== confirmPassword) {
-    alert("Passwords do not match!");
+  if (!email || !password) {
+    alert("Please fill all fields.");
     return;
   }
 
@@ -32,7 +30,7 @@ document.getElementById("signup-form").addEventListener("submit", (e) => {
         method: "email",
         createdAt: new Date().toISOString()
       };
-      database.ref("users/" + user.uid).set(userData);
+      db.ref("users/" + user.uid).set(userData);
       alert("Signup successful!");
       window.location.href = "map.html";
     })

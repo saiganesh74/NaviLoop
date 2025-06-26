@@ -1,19 +1,21 @@
+// ✅ Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyDRqdgXPnn1tiqKOreGOcyJifbEuyy_TdI",
   authDomain: "naviloop-test.firebaseapp.com",
   databaseURL: "https://naviloop-test-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "naviloop-test",
-  storageBucket: "naviloop-test.firebasestorage.app",
+  storageBucket: "naviloop-test.appspot.com",
   messagingSenderId: "116376630309",
   appId: "1:116376630309:web:e7f9365947502ace11bbcc"
 };
 
+// ✅ Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const database = firebase.database();
 
-document.getElementById("login-form").addEventListener("submit", (e) => {
-  e.preventDefault();
+// ✅ Sign In with Email and Password
+document.getElementById("signinBtn").addEventListener("click", () => {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
 
@@ -27,6 +29,7 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
     });
 });
 
+// ✅ Google Sign-In
 document.getElementById("googleBtn").addEventListener("click", () => {
   const provider = new firebase.auth.GoogleAuthProvider();
   auth.signInWithPopup(provider)
