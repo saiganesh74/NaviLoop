@@ -119,17 +119,19 @@ footer {
   }
 
   .hamburger {
-    display: inline-flex; 
-           position: absolute;
-        right: 1rem;
-  }
+position: absolute;
+right: 1rem; 
+display: flex;
+}
+
 
   main.map-container {
     padding: 1rem;
   }
 
   #map {
-    height: 350px;
+
+    height: 400px;
     width: 90vw;
   }
 }
