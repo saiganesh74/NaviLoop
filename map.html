@@ -2,14 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>NaviLoop | Live Bus Tracker</title>
+  <title>NaviLoop | Live Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+
+  <!-- Fonts & Leaflet CSS -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+  <!-- Custom CSS -->
   <link rel="stylesheet" href="css/map.css" />
 </head>
 
 <body>
+  <!-- Header -->
   <header>
     <div class="logo">NaviLoop</div>
     <nav class="navbar" id="navbar">
@@ -22,27 +27,37 @@
     <div class="hamburger" onclick="toggleMenu()">☰</div>
   </header>
 
+  <!-- Main -->
   <main class="map-container">
-    <h2>Track Your Bus</h2>
+    <h2>Live Bus Tracker</h2>
+
     <select id="busSelector">
       <option value="bus1">Bus 1</option>
       <option value="bus2">Bus 2</option>
       <option value="bus3">Bus 3</option>
       <option value="bus4">Bus 4</option>
+      <option value="bus5">Bus 5</option>
+      <option value="bus6">Bus 6</option>
     </select>
+
     <div id="map"></div>
   </main>
 
+  <!-- Footer -->
   <footer>
-    © 2025 NaviLoop | All rights reserved.
+    © 2025 NaviLoop. All rights reserved.
   </footer>
 
-  <!-- Scripts -->
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <!-- Custom JS -->
   <script>
-    // Firebase config
+    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyDRqdgXPnn1tiqKOreGOcyJifbEuyy_TdI",
       authDomain: "naviloop-test.firebaseapp.com",
@@ -52,48 +67,68 @@
       messagingSenderId: "116376630309",
       appId: "1:116376630309:web:e7f9365947502ace11bbcc"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Logout
-    function logout() {
-      alert("Logged out.");
-      window.location.href = "index.html";
-    }
-
-    // Toggle hamburger
-    function toggleMenu() {
-      const nav = document.getElementById("navbar");
-      nav.classList.toggle("show");
-    }
-
-    // Leaflet
-    const map = L.map('map').setView([17.385044, 78.486671], 14);
+    // Map Setup
+    const map = L.map('map').setView([17.385044, 78.486671], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    let marker = L.marker([17.385044, 78.486671]).addTo(map).bindPopup("Bus location");
+    let busMarker = L.marker([17.385044, 78.486671]).addTo(map).bindPopup("Bus Location");
+    let userMarker;
 
-    const busSelector = document.getElementById("busSelector");
-    function listenToBus(busId) {
-      db.ref(busId).on("value", (snapshot) => {
-        const data = snapshot.val();
-        if (data && data.latitude && data.longitude) {
-          const coords = [data.latitude, data.longitude];
-          marker.setLatLng(coords);
-          map.setView(coords, 15);
+    // Geolocation for user
+    if ("geolocation" in navigator) {
+      navigator.geolocation.watchPosition((pos) => {
+        const coords = [pos.coords.latitude, pos.coords.longitude];
+        if (!userMarker) {
+          userMarker = L.marker(coords, {
+            icon: L.icon({
+              iconUrl: "https://cdn-icons-png.flaticon.com/512/149/149060.png",
+              iconSize: [25, 25]
+            })
+          }).addTo(map).bindPopup("You are here").openPopup();
+        } else {
+          userMarker.setLatLng(coords);
         }
       });
     }
 
-    busSelector.addEventListener("change", (e) => {
-      listenToBus(e.target.value);
+    // Bus selector logic
+    const selector = document.getElementById("busSelector");
+    let currentBusRef = db.ref("bus1");
+
+    function trackBus(busId) {
+      if (currentBusRef) currentBusRef.off();
+      currentBusRef = db.ref(busId);
+      currentBusRef.on("value", (snapshot) => {
+        const data = snapshot.val();
+        if (data?.latitude && data?.longitude) {
+          const latlng = [data.latitude, data.longitude];
+          busMarker.setLatLng(latlng);
+          map.setView(latlng, 14);
+        }
+      });
+    }
+
+    selector.addEventListener("change", () => {
+      const selectedBus = selector.value;
+      trackBus(selectedBus);
     });
 
-    // Default
-    listenToBus("bus1");
+    trackBus("bus1"); // default on load
+
+    // Hamburger
+    function toggleMenu() {
+      document.getElementById("navbar").classList.toggle("show");
+    }
+
+    function logout() {
+      alert("Logging out...");
+      window.location.href = "index.html";
+    }
   </script>
 </body>
 </html>
