@@ -5,59 +5,51 @@
   <title>NaviLoop | Live Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Fonts & Leaflet CSS -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
-  <!-- Custom CSS -->
+  <!-- Premium Dark CSS -->
   <link rel="stylesheet" href="css/map.css" />
 </head>
-
 <body>
-  <!-- Header -->
   <header>
     <div class="logo">NaviLoop</div>
+    <div class="hamburger" onclick="toggleMenu()">☰</div>
     <nav class="navbar" id="navbar">
-      <a href="#">Live Map</a>
+      <a href="map.html">Live Map</a>
       <a href="#">Bus Schedule</a>
       <a href="#">Profile</a>
       <a href="#">Settings</a>
       <button class="logout-btn" onclick="logout()">Logout</button>
     </nav>
-    <div class="hamburger" onclick="toggleMenu()">☰</div>
   </header>
 
-  <!-- Main -->
   <main class="map-container">
-    <h2>Live Bus Tracker</h2>
+    <h2>Track Your Bus</h2>
 
     <select id="busSelector">
       <option value="bus1">Bus 1</option>
       <option value="bus2">Bus 2</option>
       <option value="bus3">Bus 3</option>
-      <option value="bus4">Bus 4</option>
-      <option value="bus5">Bus 5</option>
-      <option value="bus6">Bus 6</option>
     </select>
 
     <div id="map"></div>
   </main>
 
-  <!-- Footer -->
   <footer>
-    © 2025 NaviLoop. All rights reserved.
+    © 2025 NaviLoop | Smart Bus Tracking System
   </footer>
 
-  <!-- Firebase -->
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-  <!-- Custom JS -->
+  <!-- JavaScript -->
   <script>
-    // Firebase Config
+    // 🔧 Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyDRqdgXPnn1tiqKOreGOcyJifbEuyy_TdI",
       authDomain: "naviloop-test.firebaseapp.com",
@@ -70,64 +62,75 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Map Setup
+    // 🌍 Initialize Leaflet Map
     const map = L.map('map').setView([17.385044, 78.486671], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    let busMarker = L.marker([17.385044, 78.486671]).addTo(map).bindPopup("Bus Location");
+    // 📍 Markers
+    let busMarker = L.marker([17.385044, 78.486671]).addTo(map).bindPopup("Bus is here");
     let userMarker;
+navigator.geolocation.watchPosition(
+  (position) => {
+    const userLatLng = [position.coords.latitude, position.coords.longitude];
 
-    // Geolocation for user
-    if ("geolocation" in navigator) {
-      navigator.geolocation.watchPosition((pos) => {
-        const coords = [pos.coords.latitude, pos.coords.longitude];
-        if (!userMarker) {
-          userMarker = L.marker(coords, {
-            icon: L.icon({
-              iconUrl: "https://cdn-icons-png.flaticon.com/512/149/149060.png",
-              iconSize: [25, 25]
-            })
-          }).addTo(map).bindPopup("You are here").openPopup();
-        } else {
-          userMarker.setLatLng(coords);
-        }
-      });
+    if (userMarker) {
+      userMarker.setLatLng(userLatLng);
+    } else {
+      userMarker = L.marker(userLatLng, {
+        icon: L.icon({
+          iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+          iconSize: [30, 30],
+          iconAnchor: [15, 30],
+        })
+      }).addTo(map).bindPopup("You are here").openPopup();
     }
 
-    // Bus selector logic
+    map.setView(userLatLng, 16);
+  },
+  (error) => {
+    console.error("Geolocation Error:", error.message);
+    alert("Please allow location access to use this feature.");
+  },
+  {
+    enableHighAccuracy: true,      // ✅ ensures GPS-based accuracy
+    maximumAge: 0,                 // ❌ no caching
+    timeout: 10000                 // ⏱️ wait max 10 seconds
+  }
+);
+
+
+    // 🚌 Track Bus Based on Dropdown
     const selector = document.getElementById("busSelector");
-    let currentBusRef = db.ref("bus1");
-
     function trackBus(busId) {
-      if (currentBusRef) currentBusRef.off();
-      currentBusRef = db.ref(busId);
-      currentBusRef.on("value", (snapshot) => {
+      const busRef = db.ref(busId);
+      busRef.on("value", (snapshot) => {
         const data = snapshot.val();
-        if (data?.latitude && data?.longitude) {
+        if (data && data.latitude && data.longitude) {
           const latlng = [data.latitude, data.longitude];
-          busMarker.setLatLng(latlng);
-          map.setView(latlng, 14);
+          busMarker.setLatLng(latlng).bindPopup(`${busId.toUpperCase()} Location`);
         }
       });
     }
 
+    // 🔄 Change bus tracking dynamically
     selector.addEventListener("change", () => {
       const selectedBus = selector.value;
       trackBus(selectedBus);
     });
 
-    trackBus("bus1"); // default on load
+    // Default track first bus
+    trackBus("bus1");
 
-    // Hamburger
-    function toggleMenu() {
-      document.getElementById("navbar").classList.toggle("show");
+    // 🚪 Logout
+    function logout() {
+      window.location.href = "index.html";
     }
 
-    function logout() {
-      alert("Logging out...");
-      window.location.href = "index.html";
+    // 📱 Hamburger Toggle
+    function toggleMenu() {
+      document.getElementById("navbar").classList.toggle("show");
     }
   </script>
 </body>
