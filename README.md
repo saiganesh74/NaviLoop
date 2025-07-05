@@ -24,7 +24,7 @@
 ## 🧪 Getting Started
 1. Clone this repo
 2. Add your Firebase config to `/firebase/firebaseConfig.js`
-3. Run `gps_simulator.py` to simulate location data
+3. Run `simulate_bus.py` to simulate location data
 4. Open `frontend/index.html` to see the live bus on Google Maps
 
 ## 🔒 Note
@@ -41,4 +41,4 @@
 ---
 
 ## 📜 License
-This project is licensed under the MIT License.
+This project is licensed under the [MIT License](LICENSE).
