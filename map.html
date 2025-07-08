@@ -7,8 +7,7 @@
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-
-  <!-- Premium Dark CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
   <link rel="stylesheet" href="css/map.css" />
 </head>
 <body>
@@ -17,7 +16,7 @@
     <div class="hamburger" onclick="toggleMenu()">☰</div>
     <nav class="navbar" id="navbar">
       <a href="map.html">Live Map</a>
-      <a href="#">Bus Schedule</a>Your
+      <a href="#">Bus Schedule</a>
       <a href="#">Profile</a>
       <a href="#">Settings</a>
       <button class="logout-btn" onclick="logout()">Logout</button>
@@ -26,13 +25,11 @@
 
   <main class="map-container">
     <h2>Track Your Bus</h2>
-
     <select id="busSelector">
       <option value="bus1">Bus 1</option>
       <option value="bus2">Bus 2</option>
       <option value="bus3">Bus 3</option>
     </select>
-
     <div id="map"></div>
   </main>
 
@@ -44,12 +41,12 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-  <!-- Leaflet JS -->
+  <!-- Leaflet JS + Routing -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.min.js"></script>
 
-  <!-- JavaScript -->
   <script>
-    // 🔧 Firebase Configuration
+    // 🔧 Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyDRqdgXPnn1tiqKOreGOcyJifbEuyy_TdI",
       authDomain: "naviloop-test.firebaseapp.com",
@@ -62,76 +59,126 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // 🌍 Initialize Leaflet Map
+    // 🌍 Map Setup
     const map = L.map('map').setView([17.385044, 78.486671], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // 📍 Markers
-    let busMarker = L.marker([17.385044, 78.486671]).addTo(map).bindPopup("Bus is here");
-    let userMarker;
-navigator.geolocation.watchPosition(
-  (position) => {
-    const userLatLng = [position.coords.latitude, position.coords.longitude];
+    // Markers & routing
+    let busMarker, userMarker, routeControl;
+    let userLatLng = null, busLatLng = null;
 
-    if (userMarker) {
-      userMarker.setLatLng(userLatLng);
-    } else {
-      userMarker = L.marker(userLatLng, {
-        icon: L.icon({
-          iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
-          iconSize: [30, 30],
-          iconAnchor: [15, 30],
-        })
-      }).addTo(map).bindPopup("You are here").openPopup();
-    }
-
-    map.setView(userLatLng, 16);
-  },
-  (error) => {
-    console.error("Geolocation Error:", error.message);
-    alert("Please allow location access to use this feature.");
-  },
-  {
-    enableHighAccuracy: true,      // ✅ ensures GPS-based accuracy
-    maximumAge: 0,                 // ❌ no caching
-    timeout: 10000                 // ⏱️ wait max 10 seconds
-  }
-);
-
-
-    // 🚌 Track Bus Based on Dropdown
-    const selector = document.getElementById("busSelector");
-    function trackBus(busId) {
-      const busRef = db.ref(busId);
-      busRef.on("value", (snapshot) => {
-        const data = snapshot.val();
-        if (data && data.latitude && data.longitude) {
-          const latlng = [data.latitude, data.longitude];
-          busMarker.setLatLng(latlng).bindPopup(`${busId.toUpperCase()} Location`);
+    // 📍 Track user location
+    navigator.geolocation.watchPosition(
+      (position) => {
+        userLatLng = [position.coords.latitude, position.coords.longitude];
+        console.log("User location set:", userLatLng);
+        
+        if (userMarker) {
+          userMarker.setLatLng(userLatLng);
+        } else {
+          userMarker = L.marker(userLatLng, {
+            icon: L.icon({
+              iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+              iconSize: [30, 30],
+              iconAnchor: [15, 30]
+            })
+          }).addTo(map).bindPopup("You are here").openPopup();
         }
-      });
-    }
 
-    // 🔄 Change bus tracking dynamically
-    selector.addEventListener("change", () => {
-      const selectedBus = selector.value;
+        map.setView(userLatLng, 15);
+        drawRoute();
+      },
+      (error) => {
+        alert("Location error: " + error.message);
+        console.error("Geo Error:", error);
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+    );
+
+    // 🛣️ Draw route from bus to user
+    function drawRoute() {
+  if (!userLatLng || !busLatLng) {
+    console.warn("Missing lat/lng to draw route", { userLatLng, busLatLng });
+    return;
+  }
+
+  console.log("Drawing route between:", busLatLng, "and", userLatLng);
+
+  if (routeControl) map.removeControl(routeControl);
+
+  routeControl = L.Routing.control({
+    waypoints: [
+      L.latLng(busLatLng),
+      L.latLng(userLatLng)
+    ],
+    routeWhileDragging: false,
+    draggableWaypoints: false,
+    addWaypoints: false,
+    createMarker: () => null,
+    lineOptions: {
+      styles: [{ color: '#007bff', weight: 5 }]
+    }
+  }).addTo(map);
+}
+
+
+    // 🚌 Track bus location from Firebase
+    function trackBus(busId) {
+  const busRef = db.ref(busId);
+  busRef.on("value", (snapshot) => {
+    const data = snapshot.val();
+    console.log("Firebase data for", busId, data);
+
+    if (data && data.latitude && data.longitude) {
+      busLatLng = [data.latitude, data.longitude];
+      console.log("Bus location set:", busLatLng);
+
+      if (busMarker) {
+        busMarker.setLatLng(busLatLng).bindPopup(`${busId.toUpperCase()} Location`);
+      } else {
+        busMarker = L.marker(busLatLng, {
+          icon: L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/61/61168.png',
+            iconSize: [30, 30],
+            iconAnchor: [15, 30],
+          })
+        }).addTo(map).bindPopup(`${busId.toUpperCase()} Location`);
+      }
+
+      drawRoute();
+    } else {
+      console.warn("No bus data found or incomplete for", busId);
+    }
+  });
+}
+
+
+    // 📌 Default to bus1
+    trackBus("bus1");
+
+    // 🧠 Bus change logic
+    document.getElementById("busSelector").addEventListener("change", (e) => {
+      const selectedBus = e.target.value;
       trackBus(selectedBus);
     });
 
-    // Default track first bus
-    trackBus("bus1");
+    // 📱 Hamburger menu
+    function toggleMenu() {
+      document.getElementById("navbar").classList.toggle("show");
+    }
 
-    // 🚪 Logout
+    // 🚪 Logout redirect
     function logout() {
       window.location.href = "index.html";
     }
 
-    // 📱 Hamburger Toggle
-    function toggleMenu() {
-      document.getElementById("navbar").classList.toggle("show");
-    }
+    // 🧪 (Optional) Try to auto-start simulation backend
+    fetch("http://localhost:5500/map.html")
+      .then(res => res.text())
+      .then(msg => console.log("Simulation triggered:", msg))
+      .catch(err => console.error("Failed to start simulation:", err));
   </script>
 </body>
 </html>
