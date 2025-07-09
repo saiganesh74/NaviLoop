@@ -5,10 +5,11 @@
   <title>NaviLoop | Live Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Leaflet CSS + Routing -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <!-- Routing and Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
 
+  <!-- Custom CSS -->
   <link rel="stylesheet" href="css/map.css" />
 </head>
 <body>
@@ -28,22 +29,26 @@
     <h2>Track Your Bus</h2>
     <select id="busSelector">
       <option value="bus1">Bus 1</option>
+      <option value="bus2">Bus 2</option>
+      <option value="bus3">Bus 3</option>
     </select>
     <div id="map"></div>
   </main>
 
-  <footer>© 2025 NaviLoop | Smart Bus Tracking System</footer>
-
-  <!-- Leaflet JS + Routing -->
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.min.js"></script>
+  <footer>
+    © 2025 NaviLoop | Smart Bus Tracking System
+  </footer>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
+  <!-- Leaflet and Routing -->
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.min.js"></script>
+
   <script>
-    // 🔧 Firebase Config
+    // ✅ Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyDRqdgXPnn1tiqKOreGOcyJifbEuyy_TdI",
       authDomain: "naviloop-test.firebaseapp.com",
@@ -56,69 +61,49 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    const map = L.map('map').setView([17.385, 78.486], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    // 🌍 Init map
+    const map = L.map('map').setView([17.385044, 78.486671], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
-    let userMarker = null;
-    let busMarker = null;
+    let busMarker, userMarker, routeControl;
     let busLatLng = null;
     let userLatLng = null;
-    let routeControl = null;
 
-    // 🧭 Get User Location
+    // 🧭 Track user location
     navigator.geolocation.watchPosition(
       (position) => {
         userLatLng = [position.coords.latitude, position.coords.longitude];
+
         if (userMarker) {
           userMarker.setLatLng(userLatLng);
         } else {
           userMarker = L.marker(userLatLng, {
             icon: L.icon({
-              iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+              iconUrl: "https://cdn-icons-png.flaticon.com/512/149/149071.png",
               iconSize: [30, 30],
-              iconAnchor: [15, 30],
+              iconAnchor: [15, 30]
             })
           }).addTo(map).bindPopup("You are here").openPopup();
         }
-        map.setView(userLatLng, 15);
+
         drawRoute();
       },
       (err) => {
-        console.error("Location error:", err.message);
-        alert("Please enable location access.");
+        alert("Location access is required.");
+        console.error("Location error:", err);
       },
       { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
     );
 
-    // 🚍 Track Bus from Firebase
-    function trackBus(busId) {
-      const ref = db.ref(busId);
-      ref.on("value", (snap) => {
-        const data = snap.val();
-        if (!data || !data.latitude || !data.longitude) return;
-        busLatLng = [data.latitude, data.longitude];
-
-        if (busMarker) {
-          busMarker.setLatLng(busLatLng);
-        } else {
-          busMarker = L.marker(busLatLng, {
-            icon: L.icon({
-              iconUrl: 'https://cdn-icons-png.flaticon.com/512/61/61168.png',
-              iconSize: [30, 30],
-              iconAnchor: [15, 30],
-            })
-          }).addTo(map).bindPopup(`${busId.toUpperCase()} Location`);
-        }
-
-        drawRoute();
-      });
-    }
-
-    // 📍 Draw Route
+    // 🗺️ Draw Route
     function drawRoute() {
-      if (!userLatLng || !busLatLng) return;
+      if (!busLatLng || !userLatLng) return;
 
-      if (routeControl) map.removeControl(routeControl);
+      if (routeControl) {
+        map.removeControl(routeControl);
+      }
 
       routeControl = L.Routing.control({
         waypoints: [
@@ -126,27 +111,60 @@
           L.latLng(userLatLng)
         ],
         routeWhileDragging: false,
-        draggableWaypoints: false,
-        addWaypoints: false,
         createMarker: () => null,
         lineOptions: {
-          styles: [{ color: 'blue', weight: 4 }]
+          styles: [{ color: "blue", weight: 4 }]
         }
       }).addTo(map);
     }
 
-    // ⏬ Track initial bus
+    // 🚌 Track bus
+    function trackBus(busId) {
+      const busRef = db.ref(busId);
+      busRef.on("value", (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.latitude && data.longitude) {
+          busLatLng = [data.latitude, data.longitude];
+
+          if (busMarker) {
+            busMarker.setLatLng(busLatLng);
+          } else {
+            busMarker = L.marker(busLatLng, {
+              icon: L.icon({
+                iconUrl: "https://cdn-icons-png.flaticon.com/512/61/61168.png",
+                iconSize: [30, 30],
+                iconAnchor: [15, 30]
+              })
+            }).addTo(map).bindPopup("Bus is here");
+          }
+
+          drawRoute();
+        }
+      });
+    }
+
+    // 🧠 On select change
+    document.getElementById("busSelector").addEventListener("change", (e) => {
+      trackBus(e.target.value);
+    });
+
+    // 🔄 Track default
     trackBus("bus1");
 
-    // 👤 Logout
+    // 🧭 Menu + Logout
     function logout() {
       window.location.href = "index.html";
     }
 
-    // 📱 Hamburger
     function toggleMenu() {
       document.getElementById("navbar").classList.toggle("show");
     }
+
+    // 🚀 Optional: auto-start simulation if needed
+    fetch("http://localhost:5000/run-simulation")
+      .then(res => res.text())
+      .then(msg => console.log("Simulation started:", msg))
+      .catch(err => console.warn("Simulation trigger failed:", err));
   </script>
 </body>
 </html>

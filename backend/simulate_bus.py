@@ -7,7 +7,6 @@ firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://naviloop-test-default-rtdb.asia-southeast1.firebasedatabase.app'
 })
 
-# Define a path from origin to destination
 path_coords = [
     (17.385044, 78.486671),  # Ameerpet
     (17.390000, 78.488000),
@@ -26,4 +25,4 @@ for lat, lon in path_coords:
         "longitude": lon
     })
     print(f"Updated location: {lat}, {lon}")
-    time.sleep(5)  # Wait 5 seconds before next update
+    time.sleep(5)  
