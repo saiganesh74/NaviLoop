@@ -2,7 +2,8 @@ name : Greeting the issue opener
 on:
   issues:
     types : [opened]
-
+permissions:
+  issues : write
 jobs :
   comment : 
     runs-on : ubuntu-latest
