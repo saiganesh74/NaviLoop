@@ -2,8 +2,8 @@ name : Testing the workflow
 on: 
     push:
         branches:
-            -dev 
-            -main
+            - dev 
+            - main
 jobs:
     test-and-run:
         runs-on : ubuntu-latest
@@ -18,7 +18,7 @@ jobs:
                 python-version: '3.11'
 
             - name: Installing depedencies 
-              run : 'pip install -r requirements.txt'
+              run : pip install -r requirements.txt
 
             - name: Running main loop 
-              run : python main.py
+              run: python main.py
