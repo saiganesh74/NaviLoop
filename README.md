@@ -44,5 +44,13 @@
 
 ---
 
+## Want to Contribute?
+
+We're open to beginner contributors! Check our [issues](https://github.com/saiganesh74/NaviLoop/issues) labeled good first issue
+
+See our [CONTRIBUTING guide](CONTRIBUTING.md) to get started!
+
+---
+
 ## License
 This project is licensed under the [MIT License](LICENSE).
