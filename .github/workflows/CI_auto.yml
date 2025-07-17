@@ -20,5 +20,5 @@ jobs:
             - name: Installing depedencies 
               run : pip install -r requirements.txt
 
-            - name: Running main loop 
-              run: python main.py
+            # - name: Running main loop 
+            #   run: python3 
