@@ -1,4 +1,4 @@
-name : Testing the workflow 
+name: Testing the workflow 
 on: 
     push:
         branches:
@@ -6,11 +6,11 @@ on:
             - main
 jobs:
     test-and-run:
-        runs-on : ubuntu-latest
+        runs-on: ubuntu-latest
 
         steps:
             - name: Cloning the code 
-              uses : actions/checkout@v3
+              uses: actions/checkout@v3
             
             - name: Setting up python 
               uses : actions/setup-python@v4
