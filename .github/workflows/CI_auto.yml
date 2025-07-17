@@ -1,0 +1,24 @@
+name: Testing the workflow 
+on: 
+    push:
+        branches:
+            - dev 
+            - main
+jobs:
+    test-and-run:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Cloning the code 
+              uses: actions/checkout@v3
+            
+            - name: Setting up python 
+              uses : actions/setup-python@v4
+              with : 
+                python-version: '3.11'
+
+            - name: Installing depedencies 
+              run : pip install -r requirements.txt
+
+            # - name: Running main loop 
+            #   run: python3 
