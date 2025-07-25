@@ -1,6 +1,6 @@
 'use client';
 
-import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
+import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
 import { useEffect, useState } from 'react';
 import BusIcon from './icons/BusIcon';
 import UserIcon from './icons/UserIcon';
@@ -27,10 +27,12 @@ export default function MapComponent({ userLocation, busLocation }: MapComponent
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-  if (!apiKey) {
+  if (!apiKey || apiKey === "YOUR_API_KEY_HERE") {
     return (
       <div className="w-full h-full flex items-center justify-center bg-muted">
-        <p className="text-destructive">Google Maps API key is missing.</p>
+        <p className="text-destructive p-4 text-center">
+          Google Maps API key is missing or invalid. Please add it to the .env.local file.
+        </p>
       </div>
     );
   }
