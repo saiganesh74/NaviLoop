@@ -28,6 +28,15 @@ interface TrafficData {
   level: 'low' | 'medium' | 'high';
 }
 
+const MOCK_USER_LOCATION = { lat: 34.06, lng: -118.24 };
+const MOCK_BUS_DATA: BusData = {
+  location: { lat: 34.0522, lng: -118.2437 },
+  status: 'normal',
+  speed: 40,
+};
+const MOCK_TRAFFIC_DATA: TrafficData = { level: 'low' };
+
+
 export default function TrackerPage() {
   const { user, logout } = useAuth();
   const [userLocation, setUserLocation] = useState<Location | null>(null);
@@ -37,6 +46,10 @@ export default function TrackerPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setUserLocation(MOCK_USER_LOCATION);
+    setBusData(MOCK_BUS_DATA);
+    setTrafficData(MOCK_TRAFFIC_DATA);
+    
     if (navigator.geolocation) {
       const watchId = navigator.geolocation.watchPosition(
         (position) => {
