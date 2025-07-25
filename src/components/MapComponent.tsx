@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import BusIcon from './icons/BusIcon';
 import UserIcon from './icons/UserIcon';
 import PolylineComponent from './PolylineComponent';
+import Image from 'next/image';
 
 interface Location {
   lat: number;
@@ -17,7 +18,7 @@ interface MapComponentProps {
 }
 
 export default function MapComponent({ userLocation, busLocation }: MapComponentProps) {
-  const [center, setCenter] = useState<Location>({ lat: 34.0522, lng: -118.2437 }); // Default to LA
+  const [center, setCenter] = useState<Location>({ lat: 34.0522, lng: -118.2437 });
   
   useEffect(() => {
     if (userLocation) {
@@ -29,10 +30,20 @@ export default function MapComponent({ userLocation, busLocation }: MapComponent
 
   if (!apiKey || apiKey === "YOUR_API_KEY_HERE") {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-muted">
-        <p className="text-destructive p-4 text-center">
-          Google Maps API key is missing or invalid. Please add it to the .env.local file.
-        </p>
+      <div className="w-full h-full relative bg-muted flex items-center justify-center">
+        <Image 
+          src="https://placehold.co/1200x800.png" 
+          alt="Map placeholder" 
+          layout="fill"
+          objectFit="cover"
+          data-ai-hint="street map"
+        />
+        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+            <div className="text-center text-white p-4 bg-black/70 rounded-lg">
+                <h3 className="font-bold text-lg mb-2">Map Unavailable</h3>
+                <p className="text-sm">Please add a Google Maps API key to your .env.local file to enable the interactive map.</p>
+            </div>
+        </div>
       </div>
     );
   }
