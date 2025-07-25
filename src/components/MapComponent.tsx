@@ -1,9 +1,10 @@
 'use client';
 
-import { APIProvider, Map, AdvancedMarker, Pin, Polyline } from '@vis.gl/react-google-maps';
+import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
 import { useEffect, useState } from 'react';
 import BusIcon from './icons/BusIcon';
 import UserIcon from './icons/UserIcon';
+import PolylineComponent from './PolylineComponent';
 
 interface Location {
   lat: number;
@@ -60,12 +61,7 @@ export default function MapComponent({ userLocation, busLocation }: MapComponent
           )}
 
           {path.length === 2 && (
-             <Polyline
-                path={path}
-                strokeColor="#2E9AFE"
-                strokeOpacity={0.8}
-                strokeWeight={5}
-             />
+             <PolylineComponent path={path} />
           )}
 
         </Map>
