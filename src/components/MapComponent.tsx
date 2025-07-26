@@ -30,14 +30,15 @@ const customUserIcon = new Icon({
 function ChangeView({ center, zoom } : {center: LatLngExpression, zoom: number}) {
   const map = useMap();
   useEffect(() => {
-    map.setView(center, zoom);
+    if (map) {
+      map.setView(center, zoom);
+    }
   }, [map, center, zoom]);
   return null;
 }
 
 const MapComponent = ({ userLocation, busLocation }: MapComponentProps) => {
   const [center, setCenter] = useState<Location>({ lat: 34.0522, lng: -118.2437 });
-  const [map, setMap] = useState<Map | null>(null);
   
   useEffect(() => {
     if (userLocation) {
@@ -60,7 +61,7 @@ const MapComponent = ({ userLocation, busLocation }: MapComponentProps) => {
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
             <div className="text-center text-white p-4 bg-black/70 rounded-lg">
                 <h3 className="font-bold text-lg mb-2">Map Unavailable</h3>
-                <p className="text-sm">Please add an OpenRouteService API key to your .env.local file to enable the interactive map.</p>
+                <p className="text-sm">Please add an OpenRouteService API key to enable the interactive map.</p>
                 <a href="https://openrouteservice.org/dev-login/" target="_blank" rel="noopener noreferrer" className="text-primary underline mt-2 inline-block">Get a free API Key</a>
             </div>
         </div>
@@ -74,36 +75,30 @@ const MapComponent = ({ userLocation, busLocation }: MapComponentProps) => {
   return (
     <div className="w-full h-full">
         <MapContainer 
-            key={Math.random()}
             center={[center.lat, center.lng]} 
             zoom={13} 
             style={{ height: '100%', width: '100%' }} 
             scrollWheelZoom={true}
-            whenCreated={setMap}
         >
-            {map && (
-                <>
-                    <ChangeView center={[center.lat, center.lng]} zoom={15} />
-                    <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    {userPosition && (
-                        <Marker position={userPosition} icon={customUserIcon}>
-                        </Marker>
-                    )}
-                    {busPosition && (
-                         <Marker position={busPosition} icon={customBusIcon}>
-                         </Marker>
-                    )}
-                    {userLocation && busLocation && (
-                        <RoutingMachine
-                            start={[userLocation.lat, userLocation.lng]}
-                            end={[busLocation.lat, busLocation.lng]}
-                            apiKey={apiKey}
-                        />
-                    )}
-                </>
+            <ChangeView center={[center.lat, center.lng]} zoom={15} />
+            <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            {userPosition && (
+                <Marker position={userPosition} icon={customUserIcon}>
+                </Marker>
+            )}
+            {busPosition && (
+                    <Marker position={busPosition} icon={customBusIcon}>
+                    </Marker>
+            )}
+            {userLocation && busLocation && (
+                <RoutingMachine
+                    start={[userLocation.lat, userLocation.lng]}
+                    end={[busLocation.lat, busLocation.lng]}
+                    apiKey={apiKey}
+                />
             )}
         </MapContainer>
     </div>
