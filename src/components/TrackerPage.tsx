@@ -53,9 +53,13 @@ export default function TrackerPage({ busId }: { busId: string }) {
    }), []);
 
   const handleRouteFound = useCallback((coordinates: L.LatLng[]) => {
-    setRoute(coordinates);
-    setRouteIndex(0);
-  }, []);
+    // Only set the route if it's a new route
+    if (coordinates.length > 0 && (route.length === 0 || coordinates[0].lat !== route[0].lat)) {
+      setRoute(coordinates);
+      setRouteIndex(0); // Reset bus position on new route
+    }
+  }, [route]);
+
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -123,7 +127,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
       
       // Calculate remaining distance along the route
       let remainingDistance = 0;
-      if (route.length > 0 && routeIndex < route.length) {
+      if (route.length > 0 && routeIndex < route.length - 1) {
         for (let i = routeIndex; i < route.length - 1; i++) {
             remainingDistance += route[i].distanceTo(route[i+1]);
         }
@@ -152,7 +156,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
     if (busData?.status === 'breakdown') return <span className="text-destructive font-bold">Not Available</span>;
     if (eta === null) return <span>Calculating...</span>;
     if (eta === Infinity) return <span>Bus is not moving</span>;
-    if (eta < 1) return <span className="text-green-600 font-bold">Arriving now</span>;
+    if (eta < 1/60) return <span className="text-green-600 font-bold">Arriving now</span>;
     const minutes = Math.floor(eta);
     const seconds = Math.floor((eta * 60) % 60);
     return <span>{`${minutes} min ${seconds} sec`}</span>;
