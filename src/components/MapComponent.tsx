@@ -5,6 +5,7 @@ import { Icon, Map as LeafletMap, map as createMap, tileLayer, marker, LatLng } 
 import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import RoutingMachine from './RoutingMachine';
+import { useTheme } from 'next-themes';
 
 interface Location {
   lat: number;
@@ -33,7 +34,12 @@ const MapComponent = ({ userLocation, busLocation, onRouteFound }: MapComponentP
   const mapRef = useRef<LeafletMap | null>(null);
   const userMarkerRef = useRef<L.Marker | null>(null);
   const busMarkerRef = useRef<L.Marker | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const { theme } = useTheme();
+
+  const lightTileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const darkTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
   
   useEffect(() => {
     if (mapRef.current === null) {
@@ -42,15 +48,25 @@ const MapComponent = ({ userLocation, busLocation, onRouteFound }: MapComponentP
         const initialCenter = userLocation || { lat: 17.3850, lng: 78.4867 };
         const leafletMap = createMap('map').setView([initialCenter.lat, initialCenter.lng], 13);
         mapRef.current = leafletMap;
-
-        tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(leafletMap);
-
         setMapReady(true);
       }
     }
   }, [userLocation]);
+
+  useEffect(() => {
+    if (mapRef.current && mapReady) {
+      const tileUrl = theme === 'dark' ? darkTileUrl : lightTileUrl;
+      if (tileLayerRef.current) {
+        tileLayerRef.current.setUrl(tileUrl);
+      } else {
+        tileLayerRef.current = tileLayer(tileUrl, {
+          attribution: theme === 'dark' 
+            ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(mapRef.current);
+      }
+    }
+  }, [theme, mapReady]);
 
   useEffect(() => {
     if (mapRef.current && userLocation) {
@@ -59,7 +75,9 @@ const MapComponent = ({ userLocation, busLocation, onRouteFound }: MapComponentP
       } else {
         userMarkerRef.current.setLatLng([userLocation.lat, userLocation.lng]);
       }
-      mapRef.current.setView([userLocation.lat, userLocation.lng], mapRef.current.getZoom() || 15);
+      if (mapReady) {
+        mapRef.current.setView([userLocation.lat, userLocation.lng], mapRef.current.getZoom() || 15);
+      }
     }
   }, [userLocation, mapReady]);
 

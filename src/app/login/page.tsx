@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { BusIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
     return (
@@ -94,7 +95,10 @@ export default function LoginPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="mx-auto max-w-sm w-full">
+      <Card className="mx-auto max-w-sm w-full relative">
+        <div className="absolute top-4 right-4">
+            <ThemeToggle />
+        </div>
         <CardHeader className="text-center">
             <div className="flex justify-center items-center mb-4">
                 <BusIcon className="h-10 w-10 text-primary" />
