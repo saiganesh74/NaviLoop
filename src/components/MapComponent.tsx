@@ -2,8 +2,8 @@
 
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Icon, LatLngExpression, Map as LeafletMap } from 'leaflet';
-import React, { useEffect, useState, useRef } from 'react';
+import { Icon, LatLngExpression } from 'leaflet';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import RoutingMachine from './RoutingMachine';
 
@@ -36,7 +36,7 @@ function ChangeView({ center, zoom } : {center: LatLngExpression, zoom: number})
   return null;
 }
 
-const MapComponent = React.memo(function MapComponent({ userLocation, busLocation }: MapComponentProps) {
+const MapComponent = ({ userLocation, busLocation }: MapComponentProps) => {
   const [center, setCenter] = useState<Location>({ lat: 34.0522, lng: -118.2437 });
   
   useEffect(() => {
@@ -97,6 +97,6 @@ const MapComponent = React.memo(function MapComponent({ userLocation, busLocatio
         </MapContainer>
     </div>
   );
-});
+};
 
 export default MapComponent;
