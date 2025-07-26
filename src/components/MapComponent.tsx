@@ -88,7 +88,7 @@ const MapComponent = ({ userLocation, busLocation }: MapComponentProps) => {
   }, [userLocation, busLocation, mapReady]);
 
 
-  const apiKey = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjI1ODQ2ZTZjMzg0NjRmZmM4OTNmYmNiZmM3MzljN2NjIiwiaCI6Im11cm11cjY0In0=";
+  const apiKey = process.env.NEXT_PUBLIC_OPENROUTESERVICE_API_KEY;
 
   if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
     return (
