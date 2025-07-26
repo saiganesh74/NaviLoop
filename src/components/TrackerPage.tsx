@@ -59,6 +59,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
 
 
   useEffect(() => {
+    // Attempt to get real user location
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -68,19 +69,25 @@ export default function TrackerPage({ busId }: { busId: string }) {
                 });
             },
             () => {
+                // Fallback to mock location if permission is denied
+                console.warn("Geolocation failed or was denied. Using mock user location.");
                 setUserLocation(MOCK_USER_LOCATION);
             }
         );
     } else {
+      // Fallback for browsers that don't support geolocation
+      console.warn("Geolocation is not supported by this browser. Using mock user location.");
       setUserLocation(MOCK_USER_LOCATION);
     }
     
+    // Create a unique starting point for each bus based on its ID
     const seed = parseInt(busId, 10) / 1000;
     const busStartLocation: Location = {
         lat: MOCK_BUS_START_LOCATION.lat + seed,
         lng: MOCK_BUS_START_LOCATION.lng + seed,
     };
 
+    // Initialize bus and traffic data
     const initialBusData = {
       location: { ...busStartLocation },
       status: 'normal' as 'normal' | 'breakdown',
@@ -91,24 +98,35 @@ export default function TrackerPage({ busId }: { busId: string }) {
     setError(null);
   }, [busId]);
 
+  // Bus movement simulation
   useEffect(() => {
+    // Don't run simulation if there's no route or the bus has broken down
     if (route.length === 0 || busData?.status === 'breakdown') {
       return;
     }
 
     const moveBus = () => {
+      // Advance the bus along the route
       routeIndexRef.current += 1;
+
+      // Check if the bus has reached the end of the route
       if (routeIndexRef.current < route.length) {
         const newPos = route[routeIndexRef.current];
+        // Update the bus data state with the new location
         setBusData(prevBusData => {
-          if (!prevBusData) return null;
+          if (!prevBusData) return null; // Should not happen
           return { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng } };
         });
+      } else {
+         // If at the end, stop the interval
+        clearInterval(simulationInterval);
       }
     };
 
-    const simulationInterval = setInterval(moveBus, 3000);
+    // Start the simulation timer
+    const simulationInterval = setInterval(moveBus, 3000); // Move every 3 seconds
 
+    // Cleanup function to clear the interval when the component unmounts or dependencies change
     return () => clearInterval(simulationInterval);
   }, [route, busData?.status]);
 
