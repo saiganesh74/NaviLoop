@@ -22,7 +22,7 @@ const RoutingMachine = ({ map, start, end, apiKey, onRouteFound }: RoutingMachin
           method: 'POST',
           headers: {
             'Authorization': apiKey,
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json; charset=utf-8',
             'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
           },
           body: JSON.stringify({ 
