@@ -2,11 +2,10 @@
 
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Icon, LatLngExpression } from 'leaflet';
+import { Icon, LatLngExpression, Map } from 'leaflet';
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import RoutingMachine from './RoutingMachine';
-
 
 interface Location {
   lat: number;
@@ -38,6 +37,7 @@ function ChangeView({ center, zoom } : {center: LatLngExpression, zoom: number})
 
 const MapComponent = ({ userLocation, busLocation }: MapComponentProps) => {
   const [center, setCenter] = useState<Location>({ lat: 34.0522, lng: -118.2437 });
+  const [map, setMap] = useState<Map | null>(null);
   
   useEffect(() => {
     if (userLocation) {
@@ -73,26 +73,36 @@ const MapComponent = ({ userLocation, busLocation }: MapComponentProps) => {
 
   return (
     <div className="w-full h-full">
-        <MapContainer center={[center.lat, center.lng]} zoom={13} style={{ height: '100%', width: '100%' }} scrollWheelZoom={true}>
-            <ChangeView center={[center.lat, center.lng]} zoom={15} />
-            <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            {userPosition && (
-                <Marker position={userPosition} icon={customUserIcon}>
-                </Marker>
-            )}
-            {busPosition && (
-                 <Marker position={busPosition} icon={customBusIcon}>
-                 </Marker>
-            )}
-            {userLocation && busLocation && (
-                <RoutingMachine
-                    start={[userLocation.lat, userLocation.lng]}
-                    end={[busLocation.lat, busLocation.lng]}
-                    apiKey={apiKey}
-                />
+        <MapContainer 
+            center={[center.lat, center.lng]} 
+            zoom={13} 
+            style={{ height: '100%', width: '100%' }} 
+            scrollWheelZoom={true}
+            whenCreated={setMap}
+        >
+            {map && (
+                <>
+                    <ChangeView center={[center.lat, center.lng]} zoom={15} />
+                    <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    {userPosition && (
+                        <Marker position={userPosition} icon={customUserIcon}>
+                        </Marker>
+                    )}
+                    {busPosition && (
+                         <Marker position={busPosition} icon={customBusIcon}>
+                         </Marker>
+                    )}
+                    {userLocation && busLocation && (
+                        <RoutingMachine
+                            start={[userLocation.lat, userLocation.lng]}
+                            end={[busLocation.lat, busLocation.lng]}
+                            apiKey={apiKey}
+                        />
+                    )}
+                </>
             )}
         </MapContainer>
     </div>
