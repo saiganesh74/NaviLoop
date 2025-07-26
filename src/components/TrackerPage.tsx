@@ -97,17 +97,17 @@ export default function TrackerPage({ busId }: { busId: string }) {
     }
 
     const moveBus = () => {
-      if (routeIndexRef.current < route.length - 1) {
-        routeIndexRef.current += 1;
+      routeIndexRef.current += 1;
+      if (routeIndexRef.current < route.length) {
         const newPos = route[routeIndexRef.current];
         setBusData(prevBusData => {
-            if (!prevBusData) return null;
-            return { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng }};
+          if (!prevBusData) return null;
+          return { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng } };
         });
       }
     };
 
-    const simulationInterval = setInterval(moveBus, 3000); // Update every 3 seconds
+    const simulationInterval = setInterval(moveBus, 3000);
 
     return () => clearInterval(simulationInterval);
   }, [route, busData?.status]);
