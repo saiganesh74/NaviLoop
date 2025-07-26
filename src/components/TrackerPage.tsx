@@ -13,6 +13,9 @@ import dynamic from 'next/dynamic';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import L from 'leaflet';
+import { getRoute } from '@/ai/flows/routing-flow';
+import { ThemeToggle } from './ThemeToggle';
+
 
 interface Location {
   lat: number;
@@ -56,11 +59,14 @@ export default function TrackerPage({ busId }: { busId: string }) {
 
   const handleRouteFound = useCallback((coordinates: L.LatLng[]) => {
       setRoute(coordinates);
+      if (coordinates.length > 0) {
+        setBusData(prev => prev ? {...prev, location: { lat: coordinates[0].lat, lng: coordinates[0].lng }} : null);
+      }
       routeIndexRef.current = 0; 
   }, []);
 
-
   useEffect(() => {
+    // Geolocation logic
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -79,49 +85,63 @@ export default function TrackerPage({ busId }: { busId: string }) {
       setUserLocation(MOCK_USER_LOCATION);
     }
     
+    // Initial Bus Data
     const seed = parseInt(busId, 10) / 1000;
     const busStartLocation: Location = {
         lat: MOCK_BUS_START_LOCATION.lat + seed,
         lng: MOCK_BUS_START_LOCATION.lng + seed,
     };
-
-    const initialBusData = {
-      location: { ...busStartLocation },
-      status: 'normal' as 'normal' | 'breakdown',
+    
+    setBusData({
+      location: busStartLocation,
+      status: 'normal',
       speed: 40,
-    };
-    setBusData(initialBusData);
+    });
+    
     setTrafficData(MOCK_TRAFFIC_DATA);
     setError(null);
   }, [busId]);
 
 
+  // Fetch route when user and bus locations are available
+  useEffect(() => {
+    if (userLocation && busData?.location) {
+      getRoute({ start: busData.location, end: userLocation })
+        .then(data => {
+          if (data && data.coordinates) {
+             const leafletRoute = data.coordinates.map(coord => new L.LatLng(coord[0], coord[1]));
+             handleRouteFound(leafletRoute);
+          }
+        })
+        .catch(err => {
+            console.error("Failed to fetch route:", err);
+            setError("Could not calculate the bus route.");
+        });
+    }
+  }, [userLocation, busData?.location.lat, busData?.location.lng, handleRouteFound]);
+
   const moveBus = useCallback(() => {
     setBusData(prevBusData => {
-      if (!prevBusData || !route || route.length === 0) return prevBusData;
+      if (!prevBusData || !route || route.length === 0 || routeIndexRef.current >= route.length - 1) {
+        if (simulationIntervalRef.current) {
+          clearInterval(simulationIntervalRef.current);
+        }
+        return prevBusData;
+      }
 
-      const currentRouteIndex = routeIndexRef.current;
-      if (currentRouteIndex < route.length - 1) {
-        const nextIndex = currentRouteIndex + 1;
-        const newPos = route[nextIndex];
-        routeIndexRef.current = nextIndex;
-        return { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng } };
-      }
-      
-      if (simulationIntervalRef.current) {
-        clearInterval(simulationIntervalRef.current);
-      }
-      return prevBusData;
+      const nextIndex = routeIndexRef.current + 1;
+      const newPos = route[nextIndex];
+      routeIndexRef.current = nextIndex;
+      return { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng } };
     });
   }, [route]);
-
 
   useEffect(() => {
     if (route.length > 0 && busData?.status === 'normal') {
       if (simulationIntervalRef.current) {
         clearInterval(simulationIntervalRef.current);
       }
-      simulationIntervalRef.current = setInterval(moveBus, 1000); 
+      simulationIntervalRef.current = setInterval(moveBus, 2000); 
     }
     
     return () => {
@@ -214,14 +234,15 @@ export default function TrackerPage({ busId }: { busId: string }) {
             <span className="sr-only">Change Bus</span>
          </Button>
         <Card className="shadow-2xl">
-            <CardContent className="p-3 flex items-center gap-3">
+            <CardContent className="p-2 flex items-center gap-2">
                  <Avatar>
                     <AvatarImage src={user?.photoURL || undefined} />
                     <AvatarFallback><UserIcon size={20}/></AvatarFallback>
                 </Avatar>
-                <div className="text-sm">
+                <div className="text-sm pr-2">
                     <p className="font-semibold">{user?.displayName || user?.email}</p>
                 </div>
+                <ThemeToggle />
                 <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
                     <LogOut size={20} />
                 </Button>

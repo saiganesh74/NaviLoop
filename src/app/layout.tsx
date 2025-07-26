@@ -3,6 +3,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 import 'leaflet/dist/leaflet.css';
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 
 export const metadata: Metadata = {
@@ -30,10 +31,17 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <AuthProvider>
-          {children}
-          <Toaster />
-        </AuthProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <AuthProvider>
+            {children}
+            <Toaster />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
