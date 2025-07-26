@@ -111,7 +111,6 @@ export default function TrackerPage({ busId }: { busId: string }) {
 
   useEffect(() => {
     const fetchAndSetRoute = async () => {
-        // We only fetch the route if we have a user location and an initial bus location.
         if (userLocation && busData?.location) {
             try {
                 const routeData = await getRoute({ start: busData.location, end: userLocation });
@@ -129,25 +128,29 @@ export default function TrackerPage({ busId }: { busId: string }) {
         }
     };
     
-    // We only want to run this effect when userLocation is first available, or if the busId changes.
-    // We do NOT want to run it every time busData.location changes.
-    if (userLocation && route.length === 0) {
+    if (userLocation && busData?.location && route.length === 0) {
         fetchAndSetRoute();
     }
   }, [userLocation, busId, handleRouteFound, toast, busData?.location, route.length]);
 
   const moveBus = useCallback(() => {
     setBusData(prevBusData => {
-      if (!prevBusData || !route || route.length === 0 || routeIndexRef.current >= route.length - 1) {
+      if (!prevBusData || !route || route.length === 0) {
+        return prevBusData;
+      }
+
+      const currentIndex = routeIndexRef.current;
+      if (currentIndex >= route.length -1) {
         if (simulationIntervalRef.current) {
           clearInterval(simulationIntervalRef.current);
         }
         return prevBusData;
       }
 
-      const nextIndex = routeIndexRef.current + 1;
+      const nextIndex = currentIndex + 1;
       const newPos = route[nextIndex];
       routeIndexRef.current = nextIndex;
+      
       return { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng } };
     });
   }, [route]);
@@ -222,6 +225,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
             userLocation={userLocation} 
             busLocation={busData?.location}
             onMapReady={handleMapReady}
+            routeCoordinates={route}
         />
         {map && <RoutingMachine map={map} routeCoordinates={route} />}
       

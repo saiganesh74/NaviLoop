@@ -21,6 +21,7 @@ interface MapComponentProps {
   userLocation: Location | null;
   busLocation: Location | undefined | null;
   onMapReady: (map: LeafletMap) => void;
+  routeCoordinates: LatLng[];
 }
 
 const customBusIcon = new Icon({
@@ -35,7 +36,7 @@ const customUserIcon = new Icon({
     iconAnchor: [25, 50],
   });
 
-const MapComponent = ({ userLocation, busLocation, onMapReady }: MapComponentProps) => {
+const MapComponent = ({ userLocation, busLocation, onMapReady, routeCoordinates }: MapComponentProps) => {
   const mapRef = useRef<LeafletMap | null>(null);
   const userMarkerRef = useRef<L.Marker | null>(null);
   const busMarkerRef = useRef<L.Marker | null>(null);
@@ -97,15 +98,13 @@ const MapComponent = ({ userLocation, busLocation, onMapReady }: MapComponentPro
     }
   }, [busLocation]);
   
-  // Fit map to user and bus
+  // Fit map to the entire route when available
   useEffect(() => {
-      if (mapRef.current && userLocation && busLocation) {
-          mapRef.current.fitBounds([
-              [userLocation.lat, userLocation.lng],
-              [busLocation.lat, busLocation.lng]
-          ], { padding: [50, 50] });
+      if (mapRef.current && routeCoordinates.length > 0) {
+        const bounds = latLngBounds(routeCoordinates);
+        mapRef.current.fitBounds(bounds, { padding: [50, 50] });
       }
-  }, [userLocation, busLocation]);
+  }, [routeCoordinates]);
 
 
   const apiKey = process.env.NEXT_PUBLIC_OPENROUTESERVICE_API_KEY;
@@ -133,7 +132,6 @@ const MapComponent = ({ userLocation, busLocation, onMapReady }: MapComponentPro
 
   return (
     <div className="w-full h-full" id="map">
-       {/* Routing is handled in TrackerPage and coordinates are passed down */}
     </div>
   );
 };
