@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, User, signOut as firebaseSignOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { onAuthStateChanged, User, signOut as firebaseSignOut, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 
@@ -9,6 +9,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   loginWithGoogle: () => Promise<any>;
+  loginWithEmail: (email:string, password:string) => Promise<any>;
   logout: () => Promise<void>;
 }
 
@@ -33,6 +34,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return signInWithPopup(auth, provider);
   }
 
+  const loginWithEmail = (email:string, password:string) => {
+    return signInWithEmailAndPassword(auth, email, password);
+  }
+
   const logout = async () => {
     await firebaseSignOut(auth);
     router.push('/login');
@@ -42,6 +47,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     user,
     loading,
     loginWithGoogle,
+    loginWithEmail,
     logout,
   };
 
