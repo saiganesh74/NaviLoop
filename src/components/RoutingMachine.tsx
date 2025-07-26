@@ -14,18 +14,26 @@ interface RoutingMachineProps {
 
 const RoutingMachine = ({ map, start, end, apiKey }: RoutingMachineProps) => {
   useEffect(() => {
-    if (!map) return;
+    if (!map || !start || !end) return;
 
     const routingControl = L.Routing.control({
       waypoints: [L.latLng(start[0], start[1]), L.latLng(end[0], end[1])],
-      router: L.Routing.osrmv1({
+       router: new (L.Routing.Router as any)({
         serviceUrl: `https://api.openrouteservice.org/v2/directions/driving-car`,
         profile: 'driving-car',
+        format: 'json',
         routingOptions: {
             alternatives: false,
         },
-        requestParameters: {
-            authorization: apiKey,
+        prepareRequest: function(url, headers) {
+          const customHeaders = [
+            { name: 'Authorization', value: apiKey },
+            { name: 'Content-Type', value: 'application/json' },
+          ]
+          for (var i = 0; i < customHeaders.length; i++) {
+            headers.push(customHeaders[i]);
+          }
+          return null;
         }
       }),
       lineOptions: {
