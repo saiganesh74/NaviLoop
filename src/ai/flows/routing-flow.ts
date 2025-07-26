@@ -34,14 +34,13 @@ const getRouteFlow = ai.defineFlow(
     const startCoords = `${input.start.lng},${input.start.lat}`;
     const endCoords = `${input.end.lng},${input.end.lat}`;
     
-    const url = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${apiKey}&start=${startCoords}&end=${endCoords}`;
+    // The API expects the destination first, then the source for driving directions.
+    const url = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${apiKey}&start=${endCoords}&end=${startCoords}`;
 
     try {
-      // Use a GET request as it's simpler and less prone to CORS issues if ever moved client-side
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-            'Authorization': apiKey,
             'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
         }
       });
@@ -57,7 +56,14 @@ const getRouteFlow = ai.defineFlow(
         throw new Error(`API request failed with status ${response.status}`);
       }
       
-      return await response.json();
+      const data = await response.json();
+      // The API returns coordinates in [lng, lat] format, and the route from destination to source.
+      // We need to reverse the coordinates to get the path from source to destination.
+      if (data.features && data.features[0]) {
+          data.features[0].geometry.coordinates.reverse();
+      }
+      return data;
+
     } catch (e: any) {
         console.error('Failed to fetch route from OpenRouteService', e);
         throw new Error('Failed to fetch route.');

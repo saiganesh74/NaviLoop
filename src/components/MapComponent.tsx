@@ -34,20 +34,13 @@ const MapComponent = ({ userLocation, busLocation, onRouteFound }: MapComponentP
   const userMarkerRef = useRef<L.Marker | null>(null);
   const busMarkerRef = useRef<L.Marker | null>(null);
   const [mapReady, setMapReady] = useState(false);
-  const [center, setCenter] = useState<Location>({ lat: 17.3850, lng: 78.4867 });
   
-  useEffect(() => {
-    if (userLocation) {
-      setCenter(userLocation);
-    }
-  }, [userLocation]);
-
-
   useEffect(() => {
     if (mapRef.current === null) {
       const mapElement = document.getElementById('map');
       if (mapElement && !(mapElement as any)._leaflet_id) {
-        const leafletMap = createMap('map').setView([center.lat, center.lng], 13);
+        const initialCenter = userLocation || { lat: 17.3850, lng: 78.4867 };
+        const leafletMap = createMap('map').setView([initialCenter.lat, initialCenter.lng], 13);
         mapRef.current = leafletMap;
 
         tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -57,7 +50,7 @@ const MapComponent = ({ userLocation, busLocation, onRouteFound }: MapComponentP
         setMapReady(true);
       }
     }
-  }, [center.lat, center.lng]);
+  }, [userLocation]);
 
   useEffect(() => {
     if (mapRef.current && userLocation) {
@@ -66,7 +59,7 @@ const MapComponent = ({ userLocation, busLocation, onRouteFound }: MapComponentP
       } else {
         userMarkerRef.current.setLatLng([userLocation.lat, userLocation.lng]);
       }
-      mapRef.current.setView([userLocation.lat, userLocation.lng], 15);
+      mapRef.current.setView([userLocation.lat, userLocation.lng], mapRef.current.getZoom() || 15);
     }
   }, [userLocation, mapReady]);
 

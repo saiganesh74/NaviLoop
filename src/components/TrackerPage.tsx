@@ -56,7 +56,8 @@ export default function TrackerPage({ busId }: { busId: string }) {
 
   const handleRouteFound = useCallback((coordinates: L.LatLng[]) => {
       setRoute(coordinates);
-      routeIndexRef.current = 0; // Reset bus position on new route
+      // Do not reset bus position here, let the simulation start from its initial point.
+      routeIndexRef.current = 0; 
   }, []);
 
 
@@ -71,25 +72,21 @@ export default function TrackerPage({ busId }: { busId: string }) {
                 });
             },
             () => {
-                // Fallback to mock location if permission is denied
                 console.warn("Geolocation failed or was denied. Using mock user location.");
                 setUserLocation(MOCK_USER_LOCATION);
             }
         );
     } else {
-      // Fallback for browsers that don't support geolocation
       console.warn("Geolocation is not supported by this browser. Using mock user location.");
       setUserLocation(MOCK_USER_LOCATION);
     }
     
-    // Create a unique starting point for each bus based on its ID
     const seed = parseInt(busId, 10) / 1000;
     const busStartLocation: Location = {
         lat: MOCK_BUS_START_LOCATION.lat + seed,
         lng: MOCK_BUS_START_LOCATION.lng + seed,
     };
 
-    // Initialize bus and traffic data
     const initialBusData = {
       location: { ...busStartLocation },
       status: 'normal' as 'normal' | 'breakdown',
@@ -100,7 +97,6 @@ export default function TrackerPage({ busId }: { busId: string }) {
     setError(null);
   }, [busId]);
 
-  // Bus movement simulation
   const moveBus = useCallback(() => {
     setBusData(prevBusData => {
         if (!prevBusData || prevBusData.status === 'breakdown' || route.length === 0) {
@@ -122,11 +118,11 @@ export default function TrackerPage({ busId }: { busId: string }) {
   }, [route]);
 
   useEffect(() => {
-      if (route.length > 0 && busData?.status === 'normal') {
+      if (route.length > 0 && busData?.status === 'normal' && busData.location) {
           if (simulationIntervalRef.current) {
               clearInterval(simulationIntervalRef.current);
           }
-          simulationIntervalRef.current = setInterval(moveBus, 3000);
+          simulationIntervalRef.current = setInterval(moveBus, 2000); // Slower interval
       } else {
           if (simulationIntervalRef.current) {
               clearInterval(simulationIntervalRef.current);
@@ -138,7 +134,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
               clearInterval(simulationIntervalRef.current);
           }
       };
-  }, [route, busData?.status, moveBus]);
+  }, [route, busData?.status, busData?.location, moveBus]);
 
 
   useEffect(() => {
@@ -148,7 +144,6 @@ export default function TrackerPage({ busId }: { busId: string }) {
         return;
       }
       
-      // Calculate remaining distance along the route
       let remainingDistance = 0;
       if (route.length > 0 && routeIndexRef.current < route.length - 1) {
         for (let i = routeIndexRef.current; i < route.length - 1; i++) {
