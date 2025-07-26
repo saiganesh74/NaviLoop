@@ -25,15 +25,21 @@ const getRouteFlow = ai.defineFlow(
       throw new Error('OpenRouteService API key is not configured.');
     }
 
-    const startCoords = `${start.lng},${start.lat}`;
-    const endCoords = `${end.lng},${end.lat}`;
-    
-    const url = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${apiKey}&start=${startCoords}&end=${endCoords}`;
+    const url = `https://api.openrouteservice.org/v2/directions/driving-car/geojson`;
+    const body = {
+      coordinates: [
+        [start.lng, start.lat],
+        [end.lng, end.lat],
+      ],
+    };
 
     try {
         const response = await fetch(url, {
-            method: 'GET',
+            method: 'POST',
+            body: JSON.stringify(body),
             headers: {
+                'Authorization': apiKey,
+                'Content-Type': 'application/json; charset=utf-8',
                 'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
             },
         });
@@ -56,7 +62,7 @@ const getRouteFlow = ai.defineFlow(
       }
     } catch (e: any) {
         console.error('Failed to fetch route from OpenRouteService', e);
-        throw new Error('Failed to fetch route.');
+        throw new Error(e.message || 'Failed to fetch route.');
     }
   }
 );
