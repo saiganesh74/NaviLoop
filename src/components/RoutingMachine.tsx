@@ -18,33 +18,15 @@ const RoutingMachine = ({ map, start, end, apiKey }: RoutingMachineProps) => {
 
     const routingControl = L.Routing.control({
       waypoints: [L.latLng(start[0], start[1]), L.latLng(end[0], end[1])],
-      router: new (L.Routing.OSRMv1 as any)({
-        serviceUrl: `https://api.openrouteservice.org/v2/directions/driving-car`,
-        profile: 'driving-car',
-        prepareRequest: function(waypoints: L.LatLng[]) {
-          const request = new XMLHttpRequest();
-          const body = JSON.stringify({
-              coordinates: waypoints.map(wp => [wp.lng, wp.lat]),
-              instructions: false,
-          });
-          request.open('POST', this.serviceUrl, true);
-          request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
-          request.setRequestHeader('Authorization', apiKey);
-          return {
-              url: this.serviceUrl,
-              headers: {
-                  'Content-Type': 'application/json; charset=UTF-8',
-                  Authorization: apiKey,
-              },
-              body: body,
-              _abort: () => {
-                  request.abort();
-              },
-          };
-        }
+      router: L.routing.osrmv1({
+          serviceUrl: `https://api.openrouteservice.org/v2/directions/driving-car`,
+          profile: 'driving-car',
+          customHeaders: [
+              { header: 'Authorization', value: apiKey }
+          ]
       }),
       lineOptions: {
-        styles: [{ color: "hsl(var(--primary))", weight: 5, opacity: 0.8 }],
+        styles: [{ color: "hsl(var(--primary))", weight: 6, opacity: 0.8 }],
       },
       show: false,
       addWaypoints: false,

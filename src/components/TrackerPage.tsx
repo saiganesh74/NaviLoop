@@ -1,8 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { ref, onValue } from 'firebase/database';
-import { db } from '@/lib/firebase';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -28,12 +26,10 @@ interface TrafficData {
   level: 'low' | 'medium' | 'high';
 }
 
-const MOCK_USER_LOCATION = { lat: 34.06, lng: -118.24 };
-const MOCK_BUS_DATA: BusData = {
-  location: { lat: 34.0522, lng: -118.2437 },
-  status: 'normal',
-  speed: 40,
-};
+// Locations in Hyderabad, India
+const MOCK_USER_LOCATION: Location = { lat: 17.4375, lng: 78.4484 }; // Jubilee Hills
+const MOCK_BUS_START_LOCATION: Location = { lat: 17.4262, lng: 78.4552 }; // Approx 2km away, Banjara Hills
+
 const MOCK_TRAFFIC_DATA: TrafficData = { level: 'low' };
 
 
@@ -44,6 +40,7 @@ export default function TrackerPage() {
   const [trafficData, setTrafficData] = useState<TrafficData | null>(null);
   const [eta, setEta] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const busDataRef = useRef<BusData | null>(null);
 
   const MapComponent = useMemo(() => dynamic(() => import('./MapComponent'), { 
     ssr: false,
@@ -51,58 +48,55 @@ export default function TrackerPage() {
    }), []);
 
   useEffect(() => {
-    // Mock data setup
+    // Set initial mock data
     setUserLocation(MOCK_USER_LOCATION);
-    setBusData(MOCK_BUS_DATA);
-    setTrafficData(MOCK_TRAFFIC_DATA);
-    
-    // Uncomment the following section to use real geolocation and Firebase data
-    /*
-    if (navigator.geolocation) {
-      const watchId = navigator.geolocation.watchPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-          setError(null);
-        },
-        (error) => {
-          setError('Geolocation error: ' + error.message);
-          console.error("Geolocation error:", error);
-        },
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-      );
-      // return () => navigator.geolocation.clearWatch(watchId);
-    } else {
-      setError("Geolocation is not supported by this browser.");
-    }
-
-    const busRef = ref(db, 'bus');
-    const unsubscribeBus = onValue(busRef, (snapshot) => {
-      if (snapshot.exists()) {
-        setBusData(snapshot.val());
-      } else {
-        setError("Bus data not available.");
-      }
-    });
-
-    const trafficRef = ref(db, 'traffic');
-    const unsubscribeTraffic = onValue(trafficRef, (snapshot) => {
-      if (snapshot.exists()) {
-        setTrafficData(snapshot.val());
-      }
-    });
-
-    return () => {
-      unsubscribeBus();
-      unsubscribeTraffic();
-      if (navigator.geolocation && watchId) {
-        navigator.geolocation.clearWatch(watchId);
-      }
+    const initialBusData = {
+      location: { ...MOCK_BUS_START_LOCATION },
+      status: 'normal' as 'normal' | 'breakdown',
+      speed: 40,
     };
-    */
+    setBusData(initialBusData);
+    busDataRef.current = initialBusData;
+    setTrafficData(MOCK_TRAFFIC_DATA);
+    setError(null);
   }, []);
+
+  useEffect(() => {
+    const simulationInterval = setInterval(() => {
+      if (!busDataRef.current || !userLocation || busDataRef.current.status === 'breakdown') return;
+      
+      const currentBusLocation = busDataRef.current.location;
+      const distanceToUser = getDistance(
+        currentBusLocation.lat,
+        currentBusLocation.lng,
+        userLocation.lat,
+        userLocation.lng
+      );
+
+      // Stop simulation if bus is very close to the user
+      if (distanceToUser < 0.05) { // ~50 meters
+        clearInterval(simulationInterval);
+        return;
+      }
+      
+      // Simple linear interpolation for simulation
+      const step = 0.02; // Adjust for faster/slower simulation
+      const newLat = currentBusLocation.lat + (userLocation.lat - currentBusLocation.lat) * step;
+      const newLng = currentBusLocation.lng + (userLocation.lng - currentBusLocation.lng) * step;
+      
+      const newBusData: BusData = {
+          ...busDataRef.current,
+          location: { lat: newLat, lng: newLng },
+      };
+      
+      busDataRef.current = newBusData;
+      setBusData(newBusData);
+
+    }, 2000); // Update every 2 seconds
+
+    return () => clearInterval(simulationInterval);
+  }, [userLocation]);
+
 
   useEffect(() => {
     if (userLocation && busData) {
