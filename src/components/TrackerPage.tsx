@@ -92,20 +92,22 @@ export default function TrackerPage({ busId }: { busId: string }) {
   }, [busId]);
 
   useEffect(() => {
-    const simulationInterval = setInterval(() => {
-        if (route.length === 0 || routeIndexRef.current >= route.length -1 || busData?.status === 'breakdown') {
-            return;
-        }
-        
-        routeIndexRef.current = Math.min(routeIndexRef.current + 1, route.length - 1);
-        const newPos = route[routeIndexRef.current];
+    if (route.length === 0 || busData?.status === 'breakdown') {
+      return;
+    }
 
+    const moveBus = () => {
+      if (routeIndexRef.current < route.length - 1) {
+        routeIndexRef.current += 1;
+        const newPos = route[routeIndexRef.current];
         setBusData(prevBusData => {
             if (!prevBusData) return null;
             return { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng }};
         });
+      }
+    };
 
-    }, 3000); // Update every 3 seconds
+    const simulationInterval = setInterval(moveBus, 3000); // Update every 3 seconds
 
     return () => clearInterval(simulationInterval);
   }, [route, busData?.status]);
