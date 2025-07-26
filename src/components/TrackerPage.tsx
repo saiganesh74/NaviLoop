@@ -46,6 +46,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
   const [eta, setEta] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [route, setRoute] = useState<LatLng[]>([]);
+  const [routeTrace, setRouteTrace] = useState<LatLng[]>([]);
   const [map, setMap] = useState<LeafletMap | null>(null);
   
   const routeIndexRef = useRef(0);
@@ -62,11 +63,13 @@ export default function TrackerPage({ busId }: { busId: string }) {
   const handleRouteFound = useCallback((coordinates: LatLng[]) => {
       setRoute(coordinates);
       if (coordinates.length > 0) {
-        setBusData(prev => prev ? {...prev, location: { lat: coordinates[0].lat, lng: coordinates[0].lng }} : {
-          location: { lat: coordinates[0].lat, lng: coordinates[0].lng },
+        const startLocation = { lat: coordinates[0].lat, lng: coordinates[0].lng };
+        setBusData(prev => prev ? {...prev, location: startLocation} : {
+          location: startLocation,
           status: 'normal',
           speed: 40,
         });
+        setRouteTrace([coordinates[0]]);
       }
       routeIndexRef.current = 0; 
   }, []);
@@ -135,25 +138,23 @@ export default function TrackerPage({ busId }: { busId: string }) {
   }, [userLocation, busData?.location, busId, handleRouteFound, toast, route.length]);
 
   const moveBus = useCallback(() => {
-    setBusData(prevBusData => {
-      if (!prevBusData || !route || route.length === 0) {
-        return prevBusData;
-      }
+      if (!route || route.length === 0) return;
 
       const currentIndex = routeIndexRef.current;
-      if (currentIndex >= route.length -1) {
+      if (currentIndex >= route.length - 1) {
         if (simulationIntervalRef.current) {
           clearInterval(simulationIntervalRef.current);
         }
-        return prevBusData;
+        return;
       }
 
       const nextIndex = currentIndex + 1;
       const newPos = route[nextIndex];
       routeIndexRef.current = nextIndex;
       
-      return { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng } };
-    });
+      setBusData(prevBusData => prevBusData ? { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng } } : null);
+      setRouteTrace(prevTrace => [...prevTrace, newPos]);
+
   }, [route]);
 
   useEffect(() => {
@@ -228,7 +229,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
             onMapReady={handleMapReady}
             routeCoordinates={route}
         />
-        {map && <RoutingMachine map={map} routeCoordinates={route} />}
+        {map && <RoutingMachine map={map} routeCoordinates={routeTrace} />}
       
       <div className="absolute top-4 left-4 z-[1000] w-full max-w-sm">
         <Card className="shadow-2xl">

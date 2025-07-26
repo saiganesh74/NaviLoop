@@ -68,10 +68,10 @@ const MapComponent = ({ userLocation, busLocation, onMapReady, routeCoordinates 
       : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
   
     if (tileLayerRef.current) {
-      mapRef.current.removeLayer(tileLayerRef.current);
+      tileLayerRef.current.setUrl(tileUrl);
+    } else {
+      tileLayerRef.current = tileLayer(tileUrl, { attribution }).addTo(mapRef.current);
     }
-    
-    tileLayerRef.current = tileLayer(tileUrl, { attribution }).addTo(mapRef.current);
   
   }, [theme, mapRef.current]);
 
