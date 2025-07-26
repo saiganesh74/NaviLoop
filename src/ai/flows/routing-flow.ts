@@ -34,8 +34,7 @@ const getRouteFlow = ai.defineFlow(
     const startCoords = `${input.start.lng},${input.start.lat}`;
     const endCoords = `${input.end.lng},${input.end.lat}`;
     
-    // The API expects the destination first, then the source for driving directions.
-    const url = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${apiKey}&start=${endCoords}&end=${startCoords}`;
+    const url = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${apiKey}&start=${startCoords}&end=${endCoords}`;
 
     try {
       const response = await fetch(url, {
@@ -57,11 +56,6 @@ const getRouteFlow = ai.defineFlow(
       }
       
       const data = await response.json();
-      // The API returns coordinates in [lng, lat] format, and the route from destination to source.
-      // We need to reverse the coordinates to get the path from source to destination.
-      if (data.features && data.features[0]) {
-          data.features[0].geometry.coordinates.reverse();
-      }
       return data;
 
     } catch (e: any) {

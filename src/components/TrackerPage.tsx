@@ -56,13 +56,11 @@ export default function TrackerPage({ busId }: { busId: string }) {
 
   const handleRouteFound = useCallback((coordinates: L.LatLng[]) => {
       setRoute(coordinates);
-      // Do not reset bus position here, let the simulation start from its initial point.
       routeIndexRef.current = 0; 
   }, []);
 
 
   useEffect(() => {
-    // Attempt to get real user location
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -97,44 +95,41 @@ export default function TrackerPage({ busId }: { busId: string }) {
     setError(null);
   }, [busId]);
 
+
   const moveBus = useCallback(() => {
     setBusData(prevBusData => {
-        if (!prevBusData || prevBusData.status === 'breakdown' || route.length === 0) {
-            return prevBusData;
-        }
+      if (!prevBusData || !route || route.length === 0) return prevBusData;
 
-        const currentRouteIndex = routeIndexRef.current;
-        if (currentRouteIndex < route.length -1) {
-            routeIndexRef.current += 1;
-            const newPos = route[routeIndexRef.current];
-            return { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng } };
-        } else {
-            if (simulationIntervalRef.current) {
-                clearInterval(simulationIntervalRef.current);
-            }
-            return prevBusData;
-        }
+      const currentRouteIndex = routeIndexRef.current;
+      if (currentRouteIndex < route.length - 1) {
+        const nextIndex = currentRouteIndex + 1;
+        const newPos = route[nextIndex];
+        routeIndexRef.current = nextIndex;
+        return { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng } };
+      }
+      
+      if (simulationIntervalRef.current) {
+        clearInterval(simulationIntervalRef.current);
+      }
+      return prevBusData;
     });
   }, [route]);
 
-  useEffect(() => {
-      if (route.length > 0 && busData?.status === 'normal' && busData.location) {
-          if (simulationIntervalRef.current) {
-              clearInterval(simulationIntervalRef.current);
-          }
-          simulationIntervalRef.current = setInterval(moveBus, 2000); // Slower interval
-      } else {
-          if (simulationIntervalRef.current) {
-              clearInterval(simulationIntervalRef.current);
-          }
-      }
 
-      return () => {
-          if (simulationIntervalRef.current) {
-              clearInterval(simulationIntervalRef.current);
-          }
-      };
-  }, [route, busData?.status, busData?.location, moveBus]);
+  useEffect(() => {
+    if (route.length > 0 && busData?.status === 'normal') {
+      if (simulationIntervalRef.current) {
+        clearInterval(simulationIntervalRef.current);
+      }
+      simulationIntervalRef.current = setInterval(moveBus, 1000); 
+    }
+    
+    return () => {
+      if (simulationIntervalRef.current) {
+        clearInterval(simulationIntervalRef.current);
+      }
+    };
+  }, [route, busData?.status, moveBus]);
 
 
   useEffect(() => {
@@ -174,6 +169,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
     if (busData?.status === 'breakdown') return <span className="text-destructive font-bold">Not Available</span>;
     if (eta === null) return <span>Calculating...</span>;
     if (eta === Infinity) return <span>Bus is not moving</span>;
+    if (routeIndexRef.current >= route.length -1) return <span className="text-green-600 font-bold">Arrived</span>;
     if (eta < 1/60) return <span className="text-green-600 font-bold">Arriving now</span>;
     const minutes = Math.floor(eta);
     const seconds = Math.floor((eta * 60) % 60);

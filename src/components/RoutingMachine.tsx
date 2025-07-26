@@ -19,6 +19,8 @@ const RoutingMachine = ({ map, start, end, apiKey, onRouteFound }: RoutingMachin
 
     const fetchRoute = async () => {
       try {
+        // Note: The Genkit flow now handles the start/end coordinate mapping.
+        // We pass the locations directly.
         const data = await getRoute({
             start: { lat: start[0], lng: start[1] },
             end: { lat: end[0], lng: end[1] }
@@ -35,9 +37,9 @@ const RoutingMachine = ({ map, start, end, apiKey, onRouteFound }: RoutingMachin
           const polyline = L.polyline(coordinates, { color: 'hsl(var(--primary))', weight: 6, opacity: 0.8 }).addTo(map);
           routingLayerRef.current = polyline;
           
-          if (map.getZoom() < 13) {
-            map.fitBounds(L.latLngBounds(start, end), { padding: [50, 50] });
-          }
+          // Fit map to the route bounds
+          map.fitBounds(L.latLngBounds(start, end), { padding: [50, 50] });
+         
 
           onRouteFound(coordinates);
         }
@@ -53,7 +55,7 @@ const RoutingMachine = ({ map, start, end, apiKey, onRouteFound }: RoutingMachin
         map.removeLayer(routingLayerRef.current);
       }
     };
-  }, [map, start, end, onRouteFound]);
+  }, [map, start, end, onRouteFound, apiKey]);
 
   return null;
 };
