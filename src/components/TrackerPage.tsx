@@ -42,7 +42,9 @@ export default function TrackerPage({ busId }: { busId: string }) {
   const [eta, setEta] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [route, setRoute] = useState<L.LatLng[]>([]);
+  
   const routeIndexRef = useRef(0);
+  const simulationIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const notificationSentRef = useRef(false);
   const { toast } = useToast();
@@ -99,36 +101,44 @@ export default function TrackerPage({ busId }: { busId: string }) {
   }, [busId]);
 
   // Bus movement simulation
+  const moveBus = useCallback(() => {
+    setBusData(prevBusData => {
+        if (!prevBusData || prevBusData.status === 'breakdown' || route.length === 0) {
+            return prevBusData;
+        }
+
+        const currentRouteIndex = routeIndexRef.current;
+        if (currentRouteIndex < route.length -1) {
+            routeIndexRef.current += 1;
+            const newPos = route[routeIndexRef.current];
+            return { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng } };
+        } else {
+            if (simulationIntervalRef.current) {
+                clearInterval(simulationIntervalRef.current);
+            }
+            return prevBusData;
+        }
+    });
+  }, [route]);
+
   useEffect(() => {
-    // Don't run simulation if there's no route or the bus has broken down
-    if (route.length === 0 || busData?.status === 'breakdown') {
-      return;
-    }
-
-    const moveBus = () => {
-      // Advance the bus along the route
-      routeIndexRef.current += 1;
-
-      // Check if the bus has reached the end of the route
-      if (routeIndexRef.current < route.length) {
-        const newPos = route[routeIndexRef.current];
-        // Update the bus data state with the new location
-        setBusData(prevBusData => {
-          if (!prevBusData) return null; // Should not happen
-          return { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng } };
-        });
+      if (route.length > 0 && busData?.status === 'normal') {
+          if (simulationIntervalRef.current) {
+              clearInterval(simulationIntervalRef.current);
+          }
+          simulationIntervalRef.current = setInterval(moveBus, 3000);
       } else {
-         // If at the end, stop the interval
-        clearInterval(simulationInterval);
+          if (simulationIntervalRef.current) {
+              clearInterval(simulationIntervalRef.current);
+          }
       }
-    };
 
-    // Start the simulation timer
-    const simulationInterval = setInterval(moveBus, 3000); // Move every 3 seconds
-
-    // Cleanup function to clear the interval when the component unmounts or dependencies change
-    return () => clearInterval(simulationInterval);
-  }, [route, busData?.status]);
+      return () => {
+          if (simulationIntervalRef.current) {
+              clearInterval(simulationIntervalRef.current);
+          }
+      };
+  }, [route, busData?.status, moveBus]);
 
 
   useEffect(() => {
