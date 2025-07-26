@@ -46,8 +46,10 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { loginWithGoogle, user } = useAuth();
+  const { loginWithGoogle, loginWithEmail, user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -56,6 +58,23 @@ export default function LoginPage() {
       router.push('/');
     }
   }, [user, router]);
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await loginWithEmail(email, password);
+      router.push('/');
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: error.message || "Please check your credentials and try again.",
+      });
+    } finally {
+        setLoading(false);
+    }
+  };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -90,19 +109,32 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-            <div className="grid gap-4">
+            <form onSubmit={handleEmailLogin} className="grid gap-4">
                 <div className="grid gap-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" placeholder="m@example.com" required />
+                    <Input 
+                        id="email" 
+                        type="email" 
+                        placeholder="m@example.com" 
+                        required 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
                 </div>
                 <div className="grid gap-2">
                     <Label htmlFor="password">Password</Label>
-                    <Input id="password" type="password" required />
+                    <Input 
+                        id="password" 
+                        type="password" 
+                        required 
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Signing in..." : "Sign in"}
                 </Button>
-            </div>
+            </form>
             <div className="relative my-4">
                 <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t" />
