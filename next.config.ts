@@ -36,6 +36,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  env: {
+    NEXT_PUBLIC_OPENROUTESERVICE_API_KEY: process.env.OPENROUTESERVICE_API_KEY,
+  }
 };
 
 export default nextConfig;
