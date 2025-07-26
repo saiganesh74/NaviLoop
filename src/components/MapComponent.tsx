@@ -1,7 +1,7 @@
 'use client';
 
 import 'leaflet/dist/leaflet.css';
-import { Icon, Map as LeafletMap, map as createMap, tileLayer, marker, LatLng } from 'leaflet';
+import { Icon, Map as LeafletMap, map as createMap, tileLayer, marker, LatLng, latLngBounds } from 'leaflet';
 import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import { useTheme } from 'next-themes';
@@ -43,7 +43,7 @@ const MapComponent = ({ userLocation, busLocation, onMapReady }: MapComponentPro
   const { theme } = useTheme();
 
   const lightTileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-  const darkTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+  const darkTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_matter/{z}/{x}/{y}{r}.png';
   
   useEffect(() => {
     if (mapRef.current === null && typeof window !== 'undefined') {

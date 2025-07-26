@@ -28,7 +28,11 @@ const RoutingMachine = ({ map, routeCoordinates }: RoutingMachineProps) => {
 
     return () => {
       if (routingLayerRef.current && map) {
-        map.removeLayer(routingLayerRef.current);
+        try {
+          map.removeLayer(routingLayerRef.current);
+        } catch(e) {
+          // It might already be removed by the time this runs, so we can ignore the error
+        }
       }
     };
   }, [map, routeCoordinates]);
