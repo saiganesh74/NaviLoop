@@ -45,7 +45,7 @@ const MapComponent = ({ userLocation, busLocation }: MapComponentProps) => {
     }
   }, [userLocation]);
 
-  const apiKey = process.env.NEXT_PUBLIC_OPENROUTESERVICE_API_KEY;
+  const apiKey = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjI1ODQ2ZTZjMzg0NjRmZmM4OTNmYmNiZmM3MzljN2NjIiwiaCI6Im11cm11cjY0In0=";
 
   if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
     return (
@@ -74,6 +74,7 @@ const MapComponent = ({ userLocation, busLocation }: MapComponentProps) => {
   return (
     <div className="w-full h-full">
         <MapContainer 
+            key={Math.random()}
             center={[center.lat, center.lng]} 
             zoom={13} 
             style={{ height: '100%', width: '100%' }} 
