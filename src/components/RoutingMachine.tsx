@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
+import { getRoute } from '@/ai/flows/routing-flow';
 
 interface RoutingMachineProps {
   map: L.Map;
@@ -14,24 +15,16 @@ const RoutingMachine = ({ map, start, end, apiKey, onRouteFound }: RoutingMachin
   const routingLayerRef = useRef<L.Polyline | null>(null);
 
   useEffect(() => {
-    if (!map || !start || !end || !apiKey) return;
+    if (!map || !start || !end) return;
 
     const fetchRoute = async () => {
       try {
-        const startCoords = `${start[1]},${start[0]}`;
-        const endCoords = `${end[1]},${end[0]}`;
+        const data = await getRoute({
+            start: { lat: start[0], lng: start[1] },
+            end: { lat: end[0], lng: end[1] }
+        });
         
-        const response = await fetch(`https://api.openrouteservice.org/v2/directions/driving-car?api_key=${apiKey}&start=${startCoords}&end=${endCoords}`);
-
-        if (!response.ok) {
-            const errorBody = await response.json();
-            console.error('Routing API Error:', errorBody);
-            return;
-        }
-
-        const data = await response.json();
-        
-        if (data.features && data.features.length > 0) {
+        if (data && data.features && data.features.length > 0) {
           const route = data.features[0];
           const coordinates = route.geometry.coordinates.map((coord: any) => L.latLng(coord[1], coord[0]));
           
@@ -60,7 +53,7 @@ const RoutingMachine = ({ map, start, end, apiKey, onRouteFound }: RoutingMachin
         map.removeLayer(routingLayerRef.current);
       }
     };
-  }, [map, start, end, apiKey, onRouteFound]);
+  }, [map, start, end, onRouteFound]);
 
   return null;
 };
