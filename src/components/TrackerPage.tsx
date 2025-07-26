@@ -1,17 +1,18 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Bus, Clock, LogOut, TrafficCone, AlertTriangle, User as UserIcon, Bell } from 'lucide-react';
+import { Bus, Clock, LogOut, TrafficCone, AlertTriangle, User as UserIcon } from 'lucide-react';
 import { calculateETA, getDistance } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
 import dynamic from 'next/dynamic';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import L from 'leaflet';
 
 interface Location {
   lat: number;
@@ -30,9 +31,7 @@ interface TrafficData {
 
 const MOCK_USER_LOCATION: Location = { lat: 17.4375, lng: 78.4484 }; // Jubilee Hills
 const MOCK_BUS_START_LOCATION: Location = { lat: 17.4262, lng: 78.4552 }; // Approx 2km away, Banjara Hills
-
 const MOCK_TRAFFIC_DATA: TrafficData = { level: 'low' };
-
 
 export default function TrackerPage({ busId }: { busId: string }) {
   const { user, logout } = useAuth();
@@ -42,7 +41,9 @@ export default function TrackerPage({ busId }: { busId: string }) {
   const [trafficData, setTrafficData] = useState<TrafficData | null>(null);
   const [eta, setEta] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const busDataRef = useRef<BusData | null>(null);
+  const [route, setRoute] = useState<L.LatLng[]>([]);
+  const [routeIndex, setRouteIndex] = useState(0);
+
   const notificationSentRef = useRef(false);
   const { toast } = useToast();
 
@@ -51,8 +52,12 @@ export default function TrackerPage({ busId }: { busId: string }) {
     loading: () => <Skeleton className="h-full w-full" />,
    }), []);
 
+  const handleRouteFound = useCallback((coordinates: L.LatLng[]) => {
+    setRoute(coordinates);
+    setRouteIndex(0);
+  }, []);
+
   useEffect(() => {
-    // Simulate getting user's location
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -62,7 +67,6 @@ export default function TrackerPage({ busId }: { busId: string }) {
                 });
             },
             () => {
-                // Fallback to mock location if permission is denied
                 setUserLocation(MOCK_USER_LOCATION);
             }
         );
@@ -70,7 +74,6 @@ export default function TrackerPage({ busId }: { busId: string }) {
       setUserLocation(MOCK_USER_LOCATION);
     }
     
-    // Create a unique starting position for each bus based on its ID
     const seed = parseInt(busId, 10) / 1000;
     const busStartLocation: Location = {
         lat: MOCK_BUS_START_LOCATION.lat + seed,
@@ -83,46 +86,32 @@ export default function TrackerPage({ busId }: { busId: string }) {
       speed: 40,
     };
     setBusData(initialBusData);
-    busDataRef.current = initialBusData;
     setTrafficData(MOCK_TRAFFIC_DATA);
     setError(null);
   }, [busId]);
 
   useEffect(() => {
     const simulationInterval = setInterval(() => {
-      if (!busDataRef.current || !userLocation || busDataRef.current.status === 'breakdown') return;
-      
-      const currentBusLocation = busDataRef.current.location;
-      const distanceToUser = getDistance(
-        currentBusLocation.lat,
-        currentBusLocation.lng,
-        userLocation.lat,
-        userLocation.lng
-      );
+        if (route.length === 0 || routeIndex >= route.length -1 || busData?.status === 'breakdown') {
+            return;
+        }
 
-      // Stop simulation if bus is very close to the user
-      if (distanceToUser < 0.05) { // ~50 meters
-        clearInterval(simulationInterval);
-        return;
-      }
-      
-      // Simple linear interpolation for simulation
-      const step = 0.02; // Adjust for faster/slower simulation
-      const newLat = currentBusLocation.lat + (userLocation.lat - currentBusLocation.lat) * step;
-      const newLng = currentBusLocation.lng + (userLocation.lng - currentBusLocation.lng) * step;
-      
-      const newBusData: BusData = {
-          ...busDataRef.current,
-          location: { lat: newLat, lng: newLng },
-      };
-      
-      busDataRef.current = newBusData;
-      setBusData(newBusData);
+        setRouteIndex(prevIndex => {
+            const nextIndex = Math.min(prevIndex + 1, route.length - 1);
+            const newPos = route[nextIndex];
+            
+            setBusData(prevBusData => {
+              if (!prevBusData) return null;
+              return { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng }};
+            });
+
+            return nextIndex;
+        });
 
     }, 2000); // Update every 2 seconds
 
     return () => clearInterval(simulationInterval);
-  }, [userLocation]);
+  }, [route, routeIndex, busData?.status]);
 
 
   useEffect(() => {
@@ -131,16 +120,19 @@ export default function TrackerPage({ busId }: { busId: string }) {
         setEta(null);
         return;
       }
-      const distance = getDistance(
-        userLocation.lat,
-        userLocation.lng,
-        busData.location.lat,
-        busData.location.lng
-      );
-      const calculatedEta = calculateETA(distance, busData.speed, trafficData?.level);
+      
+      // Calculate remaining distance along the route
+      let remainingDistance = 0;
+      if (route.length > 0 && routeIndex < route.length) {
+        for (let i = routeIndex; i < route.length - 1; i++) {
+            remainingDistance += route[i].distanceTo(route[i+1]);
+        }
+      }
+      remainingDistance = remainingDistance / 1000; // convert to KM
+
+      const calculatedEta = calculateETA(remainingDistance, busData.speed, trafficData?.level);
       setEta(calculatedEta);
 
-      // Proximity notification logic
       if (calculatedEta !== null && calculatedEta * 60 <= 40 && !notificationSentRef.current) {
         toast({
           title: "Bus is Arriving Soon!",
@@ -149,7 +141,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
         notificationSentRef.current = true;
       }
     }
-  }, [userLocation, busData, trafficData, toast, busId]);
+  }, [userLocation, busData, trafficData, toast, busId, route, routeIndex]);
 
   const handleLogout = async () => {
     await logout();
@@ -160,6 +152,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
     if (busData?.status === 'breakdown') return <span className="text-destructive font-bold">Not Available</span>;
     if (eta === null) return <span>Calculating...</span>;
     if (eta === Infinity) return <span>Bus is not moving</span>;
+    if (eta < 1) return <span className="text-green-600 font-bold">Arriving now</span>;
     const minutes = Math.floor(eta);
     const seconds = Math.floor((eta * 60) % 60);
     return <span>{`${minutes} min ${seconds} sec`}</span>;
@@ -167,7 +160,11 @@ export default function TrackerPage({ busId }: { busId: string }) {
   
   return (
     <div className="relative h-screen w-screen overflow-hidden">
-        <MapComponent userLocation={userLocation} busLocation={busData?.location} />
+        <MapComponent 
+            userLocation={userLocation} 
+            busLocation={busData?.location}
+            onRouteFound={handleRouteFound}
+        />
       
       <div className="absolute top-4 left-4 z-[1000] w-full max-w-sm">
         <Card className="shadow-2xl">

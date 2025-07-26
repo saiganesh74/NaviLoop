@@ -1,7 +1,7 @@
 'use client';
 
 import 'leaflet/dist/leaflet.css';
-import { Icon, LatLngExpression, Map as LeafletMap, map as createMap, tileLayer, marker, icon } from 'leaflet';
+import { Icon, Map as LeafletMap, map as createMap, tileLayer, marker, LatLng } from 'leaflet';
 import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import RoutingMachine from './RoutingMachine';
@@ -14,6 +14,7 @@ interface Location {
 interface MapComponentProps {
   userLocation: Location | null;
   busLocation: Location | undefined | null;
+  onRouteFound: (coordinates: LatLng[]) => void;
 }
 
 const customBusIcon = new Icon({
@@ -28,8 +29,10 @@ const customUserIcon = new Icon({
     iconAnchor: [20, 40],
   });
 
-const MapComponent = ({ userLocation, busLocation }: MapComponentProps) => {
+const MapComponent = ({ userLocation, busLocation, onRouteFound }: MapComponentProps) => {
   const mapRef = useRef<LeafletMap | null>(null);
+  const userMarkerRef = useRef<L.Marker | null>(null);
+  const busMarkerRef = useRef<L.Marker | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [center, setCenter] = useState<Location>({ lat: 17.3850, lng: 78.4867 });
   
@@ -54,17 +57,15 @@ const MapComponent = ({ userLocation, busLocation }: MapComponentProps) => {
         setMapReady(true);
       }
     }
-
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
-  }, []); // Empty dependency array ensures this runs only once
+  }, [center.lat, center.lng]);
 
   useEffect(() => {
     if (mapRef.current && userLocation) {
+      if (!userMarkerRef.current) {
+        userMarkerRef.current = marker([userLocation.lat, userLocation.lng], { icon: customUserIcon }).addTo(mapRef.current);
+      } else {
+        userMarkerRef.current.setLatLng([userLocation.lat, userLocation.lng]);
+      }
       mapRef.current.setView([userLocation.lat, userLocation.lng], 15);
     }
   }, [userLocation, mapReady]);
@@ -73,21 +74,15 @@ const MapComponent = ({ userLocation, busLocation }: MapComponentProps) => {
   // Add/Update markers
   useEffect(() => {
     if (mapRef.current && mapReady) {
-      // Clear existing markers before adding new ones
-      mapRef.current.eachLayer((layer) => {
-        if (layer instanceof L.Marker) {
-          mapRef.current?.removeLayer(layer);
-        }
-      });
-      
-      if (userLocation) {
-        marker([userLocation.lat, userLocation.lng], { icon: customUserIcon }).addTo(mapRef.current);
-      }
       if (busLocation) {
-        marker([busLocation.lat, busLocation.lng], { icon: customBusIcon }).addTo(mapRef.current);
+        if (!busMarkerRef.current) {
+          busMarkerRef.current = marker([busLocation.lat, busLocation.lng], { icon: customBusIcon }).addTo(mapRef.current);
+        } else {
+          busMarkerRef.current.setLatLng([busLocation.lat, busLocation.lng]);
+        }
       }
     }
-  }, [userLocation, busLocation, mapReady]);
+  }, [busLocation, mapReady]);
 
 
   const apiKey = process.env.NEXT_PUBLIC_OPENROUTESERVICE_API_KEY;
@@ -121,6 +116,7 @@ const MapComponent = ({ userLocation, busLocation }: MapComponentProps) => {
               start={[userLocation.lat, userLocation.lng]}
               end={[busLocation.lat, busLocation.lng]}
               apiKey={apiKey}
+              onRouteFound={onRouteFound}
           />
        )}
     </div>

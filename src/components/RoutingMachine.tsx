@@ -9,9 +9,10 @@ interface RoutingMachineProps {
   start: [number, number];
   end: [number, number];
   apiKey: string;
+  onRouteFound: (coordinates: L.LatLng[]) => void;
 }
 
-const RoutingMachine = ({ map, start, end, apiKey }: RoutingMachineProps) => {
+const RoutingMachine = ({ map, start, end, apiKey, onRouteFound }: RoutingMachineProps) => {
   useEffect(() => {
     if (!map || !start || !end) return;
 
@@ -19,26 +20,9 @@ const RoutingMachine = ({ map, start, end, apiKey }: RoutingMachineProps) => {
       waypoints: [L.latLng(start[0], start[1]), L.latLng(end[0], end[1])],
       // @ts-ignore
       router: new L.Routing.OSRMv1({
-        serviceUrl: `https://api.openrouteservice.org/v2/directions/driving-car/geojson`,
+        serviceUrl: `https://api.openrouteservice.org/v2/directions/driving-car`,
         profile: 'driving-car',
-        routingOptions: {
-          alternatives: false,
-          language: 'en',
-          steps: false,
-        },
-        useHints: false,
-        requestParameters: {
-          attributes: ['absolute_distance'],
-        },
-        // Pass the API key in the headers
-        fetchOptions: {
-          headers: {
-            Authorization: apiKey,
-            'Content-Type': 'application/json',
-          },
-        },
       }),
-
       lineOptions: {
         styles: [{ color: 'hsl(var(--primary))', weight: 6, opacity: 0.8 }],
       },
@@ -47,65 +31,60 @@ const RoutingMachine = ({ map, start, end, apiKey }: RoutingMachineProps) => {
       routeWhileDragging: false,
       draggableWaypoints: false,
       fitSelectedRoutes: true,
-      createMarker: () => {
-        return null;
-      },
+      createMarker: () => null,
     }).addTo(map);
-    
-    // Manually handle the POST request since leaflet-routing-machine defaults to GET
-    // @ts-ignore
-    routingControl.on('routingstart', function (e) {
-        // @ts-ignore
-      var waypoints = e.waypoints;
-      var router = this.getRouter();
-      
-      const coordinates = waypoints.map((p: any) => [p.latLng.lng, p.latLng.lat]);
 
-        fetch(`https://api.openrouteservice.org/v2/directions/driving-car/geojson`, {
-            method: 'POST',
-            headers: {
-                'Authorization': apiKey,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ coordinates: coordinates, instructions: false })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.features && data.features.length > 0) {
-                const route = data.features[0];
-                const coordinates = route.geometry.coordinates.map((coord: any) => [coord[1], coord[0]]);
-                // @ts-ignore
-                routingControl.setAlternatives([{
-                    name: '',
-                    summary: {
-                        totalDistance: route.properties.summary.distance,
-                        totalTime: route.properties.summary.duration
-                    },
-                    coordinates: coordinates,
-                    waypoints: waypoints.map((wp: any) => wp.latLng),
-                    instructions: []
-                }]);
-            }
-        })
-        .catch(error => {
-            console.error('Routing error:', error);
-            // @ts-ignore
-            routingControl.getErrorHandler()({
-                status: -1,
-                message: 'Could not connect to routing service.'
-            });
+    const fetchRoute = async () => {
+      try {
+        const response = await fetch(`https://api.openrouteservice.org/v2/directions/driving-car/geojson`, {
+          method: 'POST',
+          headers: {
+            'Authorization': apiKey,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
+          },
+          body: JSON.stringify({ 
+            coordinates: [[start[1], start[0]], [end[1], end[0]]],
+            instructions: false,
+           })
         });
-        
-        return false;
-    });
 
+        if (!response.ok) {
+            const errorBody = await response.json();
+            console.error('Routing API Error:', errorBody);
+            return;
+        }
+
+        const data = await response.json();
+        
+        if (data.features && data.features.length > 0) {
+          const route = data.features[0];
+          const coordinates = route.geometry.coordinates.map((coord: any) => L.latLng(coord[1], coord[0]));
+          
+          L.polyline(coordinates, { color: 'hsl(var(--primary))', weight: 6, opacity: 0.8 }).addTo(map);
+          map.fitBounds(L.latLngBounds(start, end), { padding: [50, 50] });
+
+          onRouteFound(coordinates);
+        }
+      } catch (error) {
+        console.error('Routing error:', error);
+      }
+    };
+
+    fetchRoute();
 
     return () => {
       if (map && routingControl) {
+        // Since we are adding the polyline manually, we need to clear it manually.
+        map.eachLayer((layer) => {
+            if (layer instanceof L.Polyline) {
+                map.removeLayer(layer);
+            }
+        });
         map.removeControl(routingControl);
       }
     };
-  }, [map, start, end, apiKey]);
+  }, [map, start, end, apiKey, onRouteFound]);
 
   return null;
 };
