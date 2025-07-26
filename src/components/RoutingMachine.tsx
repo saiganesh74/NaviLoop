@@ -1,17 +1,20 @@
 'use client';
 import { useEffect, useRef } from 'react';
-import L from 'leaflet';
+import type { Map, Polyline, LatLng } from 'leaflet';
 
 interface RoutingMachineProps {
-  map: L.Map;
-  routeCoordinates: L.LatLng[];
+  map: Map;
+  routeCoordinates: LatLng[];
 }
 
 const RoutingMachine = ({ map, routeCoordinates }: RoutingMachineProps) => {
-  const routingLayerRef = useRef<L.Polyline | null>(null);
+  const routingLayerRef = useRef<Polyline | null>(null);
 
   useEffect(() => {
-    if (!map) return;
+    if (!map || typeof window === 'undefined') return;
+    
+    // Dynamically import leaflet only on the client-side
+    const L = require('leaflet');
 
     if (routingLayerRef.current) {
         map.removeLayer(routingLayerRef.current);

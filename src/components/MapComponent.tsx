@@ -1,7 +1,7 @@
 'use client';
 
 import 'leaflet/dist/leaflet.css';
-import { Icon, Map as LeafletMap, map as createMap, tileLayer, marker, LatLng, polyline, latLngBounds } from 'leaflet';
+import { Icon, Map as LeafletMap, map as createMap, tileLayer, marker, LatLng } from 'leaflet';
 import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import { useTheme } from 'next-themes';
@@ -20,7 +20,7 @@ interface Location {
 interface MapComponentProps {
   userLocation: Location | null;
   busLocation: Location | undefined | null;
-  routeCoordinates: LatLng[];
+  onMapReady: (map: LeafletMap) => void;
 }
 
 const customBusIcon = new Icon({
@@ -35,13 +35,11 @@ const customUserIcon = new Icon({
     iconAnchor: [25, 50],
   });
 
-const MapComponent = ({ userLocation, busLocation, routeCoordinates }: MapComponentProps) => {
+const MapComponent = ({ userLocation, busLocation, onMapReady }: MapComponentProps) => {
   const mapRef = useRef<LeafletMap | null>(null);
   const userMarkerRef = useRef<L.Marker | null>(null);
   const busMarkerRef = useRef<L.Marker | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
-  const routeLayerRef = useRef<L.Polyline | null>(null);
-  const [mapReady, setMapReady] = useState(false);
   const { theme } = useTheme();
 
   const lightTileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -55,13 +53,13 @@ const MapComponent = ({ userLocation, busLocation, routeCoordinates }: MapCompon
         const initialCenter = userLocation || { lat: 17.3850, lng: 78.4867 };
         const leafletMap = createMap('map').setView([initialCenter.lat, initialCenter.lng], 13);
         mapRef.current = leafletMap;
-        setMapReady(true);
+        onMapReady(leafletMap);
       }
     }
-  }, [userLocation]);
+  }, [userLocation, onMapReady]);
 
   useEffect(() => {
-    if (mapRef.current && mapReady) {
+    if (mapRef.current) {
       const tileUrl = theme === 'dark' ? darkTileUrl : lightTileUrl;
       if (tileLayerRef.current) {
         tileLayerRef.current.setUrl(tileUrl);
@@ -73,7 +71,7 @@ const MapComponent = ({ userLocation, busLocation, routeCoordinates }: MapCompon
         }).addTo(mapRef.current);
       }
     }
-  }, [theme, mapReady]);
+  }, [theme]);
 
   useEffect(() => {
     if (mapRef.current && userLocation) {
@@ -88,7 +86,7 @@ const MapComponent = ({ userLocation, busLocation, routeCoordinates }: MapCompon
 
   // Add/Update markers
   useEffect(() => {
-    if (mapRef.current && mapReady) {
+    if (mapRef.current) {
       if (busLocation) {
         if (!busMarkerRef.current) {
           busMarkerRef.current = marker([busLocation.lat, busLocation.lng], { icon: customBusIcon }).addTo(mapRef.current);
@@ -97,21 +95,17 @@ const MapComponent = ({ userLocation, busLocation, routeCoordinates }: MapCompon
         }
       }
     }
-  }, [busLocation, mapReady]);
+  }, [busLocation]);
   
-  // Draw route
+  // Fit map to user and bus
   useEffect(() => {
-      if (mapRef.current && routeCoordinates.length > 0 && mapReady && window.L) {
-          if (routeLayerRef.current) {
-              mapRef.current.removeLayer(routeLayerRef.current);
-          }
-          const newPolyline = polyline(routeCoordinates, { color: 'hsl(var(--primary))', weight: 6, opacity: 0.8 }).addTo(mapRef.current);
-          routeLayerRef.current = newPolyline;
-          
-          // Fit the map to the bounds of the entire route polyline
-          mapRef.current.fitBounds(newPolyline.getBounds(), { padding: [50, 50] });
+      if (mapRef.current && userLocation && busLocation) {
+          mapRef.current.fitBounds([
+              [userLocation.lat, userLocation.lng],
+              [busLocation.lat, busLocation.lng]
+          ], { padding: [50, 50] });
       }
-  }, [routeCoordinates, mapReady]);
+  }, [userLocation, busLocation]);
 
 
   const apiKey = process.env.NEXT_PUBLIC_OPENROUTESERVICE_API_KEY;

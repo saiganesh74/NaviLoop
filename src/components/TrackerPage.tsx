@@ -14,7 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { getRoute } from '@/ai/flows/routing-flow';
 import { ThemeToggle } from './ThemeToggle';
-import type { LatLng } from 'leaflet';
+import type { LatLng, Map as LeafletMap } from 'leaflet';
+import RoutingMachine from './RoutingMachine';
 
 
 interface Location {
@@ -45,6 +46,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
   const [eta, setEta] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [route, setRoute] = useState<LatLng[]>([]);
+  const [map, setMap] = useState<LeafletMap | null>(null);
   
   const routeIndexRef = useRef(0);
   const simulationIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -129,10 +131,10 @@ export default function TrackerPage({ busId }: { busId: string }) {
     
     // We only want to run this effect when userLocation is first available, or if the busId changes.
     // We do NOT want to run it every time busData.location changes.
-    if (userLocation) {
+    if (userLocation && route.length === 0) {
         fetchAndSetRoute();
     }
-  }, [userLocation, busId, handleRouteFound, toast]);
+  }, [userLocation, busId, handleRouteFound, toast, busData?.location, route.length]);
 
   const moveBus = useCallback(() => {
     setBusData(prevBusData => {
@@ -198,6 +200,10 @@ export default function TrackerPage({ busId }: { busId: string }) {
     await logout();
     router.push('/login');
   };
+  
+  const handleMapReady = useCallback((mapInstance: LeafletMap) => {
+    setMap(mapInstance);
+  }, []);
 
   const renderETA = () => {
     if (busData?.status === 'breakdown') return <span className="text-destructive font-bold">Not Available</span>;
@@ -215,8 +221,9 @@ export default function TrackerPage({ busId }: { busId: string }) {
         <MapComponent 
             userLocation={userLocation} 
             busLocation={busData?.location}
-            routeCoordinates={route}
+            onMapReady={handleMapReady}
         />
+        {map && <RoutingMachine map={map} routeCoordinates={route} />}
       
       <div className="absolute top-4 left-4 z-[1000] w-full max-w-sm">
         <Card className="shadow-2xl">
