@@ -21,9 +21,11 @@ const RoutingMachine = ({ map, start, end, apiKey }: RoutingMachineProps) => {
       router: L.routing.osrmv1({
           serviceUrl: `https://api.openrouteservice.org/v2/directions/driving-car`,
           profile: 'driving-car',
-          customHeaders: [
-              { header: 'Authorization', value: apiKey }
-          ]
+          routingOptions: {
+            customHeaders: [
+                { header: 'Authorization', value: apiKey }
+            ]
+          }
       }),
       lineOptions: {
         styles: [{ color: "hsl(var(--primary))", weight: 6, opacity: 0.8 }],
