@@ -3,7 +3,7 @@
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Icon, LatLngExpression } from 'leaflet';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import BusIcon from './icons/BusIcon';
 import UserIcon from './icons/UserIcon';
 import Image from 'next/image';
@@ -32,7 +32,9 @@ const customUserIcon = new Icon({
 
 function ChangeView({ center, zoom } : {center: LatLngExpression, zoom: number}) {
   const map = useMap();
-  map.setView(center, zoom);
+  useEffect(() => {
+    map.setView(center, zoom);
+  }, [map, center, zoom]);
   return null;
 }
 
@@ -73,7 +75,7 @@ export default function MapComponent({ userLocation, busLocation }: MapComponent
 
   return (
     <div className="w-full h-full">
-        <MapContainer center={[center.lat, center.lng]} zoom={13} style={{ height: '100%', width: '100%' }} scrollWheelZoom={true}>
+        <MapContainer center={[center.lat, center.lng]} zoom={13} style={{ height: '100%', width: '100%' }} scrollWheelZoom={true} whenCreated={() => {}}>
             <ChangeView center={[center.lat, center.lng]} zoom={15} />
             <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
