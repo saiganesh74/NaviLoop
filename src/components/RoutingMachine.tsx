@@ -42,7 +42,7 @@ const RoutingMachine = ({ start, end, apiKey }: RoutingMachineProps) => {
 
     return () => {
         if(map && routingControl) {
-            map.removeControl(routingControl)
+            map.removeControl(routingControl);
         }
     };
   }, [map, start, end, apiKey]);
