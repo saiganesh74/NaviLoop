@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import TrackerPage from '@/components/TrackerPage';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,14 +9,18 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const busId = searchParams.get('busId');
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
+    } else if (!loading && user && !busId) {
+      router.push('/bus-selection');
     }
-  }, [user, loading, router]);
+  }, [user, loading, busId, router]);
 
-  if (loading || !user) {
+  if (loading || !user || !busId) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-background">
         <div className="w-full h-full">
@@ -26,5 +30,5 @@ export default function Home() {
     );
   }
 
-  return <TrackerPage />;
+  return <TrackerPage busId={busId} />;
 }

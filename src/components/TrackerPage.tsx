@@ -6,10 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Bus, Clock, LogOut, TrafficCone, AlertTriangle, User as UserIcon } from 'lucide-react';
+import { Bus, Clock, LogOut, TrafficCone, AlertTriangle, User as UserIcon, Bell } from 'lucide-react';
 import { calculateETA, getDistance } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
 import dynamic from 'next/dynamic';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 interface Location {
   lat: number;
@@ -26,21 +28,23 @@ interface TrafficData {
   level: 'low' | 'medium' | 'high';
 }
 
-// Locations in Hyderabad, India
 const MOCK_USER_LOCATION: Location = { lat: 17.4375, lng: 78.4484 }; // Jubilee Hills
 const MOCK_BUS_START_LOCATION: Location = { lat: 17.4262, lng: 78.4552 }; // Approx 2km away, Banjara Hills
 
 const MOCK_TRAFFIC_DATA: TrafficData = { level: 'low' };
 
 
-export default function TrackerPage() {
+export default function TrackerPage({ busId }: { busId: string }) {
   const { user, logout } = useAuth();
+  const router = useRouter();
   const [userLocation, setUserLocation] = useState<Location | null>(null);
   const [busData, setBusData] = useState<BusData | null>(null);
   const [trafficData, setTrafficData] = useState<TrafficData | null>(null);
   const [eta, setEta] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const busDataRef = useRef<BusData | null>(null);
+  const notificationSentRef = useRef(false);
+  const { toast } = useToast();
 
   const MapComponent = useMemo(() => dynamic(() => import('./MapComponent'), { 
     ssr: false,
@@ -48,10 +52,33 @@ export default function TrackerPage() {
    }), []);
 
   useEffect(() => {
-    // Set initial mock data
-    setUserLocation(MOCK_USER_LOCATION);
+    // Simulate getting user's location
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                setUserLocation({
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                });
+            },
+            () => {
+                // Fallback to mock location if permission is denied
+                setUserLocation(MOCK_USER_LOCATION);
+            }
+        );
+    } else {
+      setUserLocation(MOCK_USER_LOCATION);
+    }
+    
+    // Create a unique starting position for each bus based on its ID
+    const seed = parseInt(busId, 10) / 1000;
+    const busStartLocation: Location = {
+        lat: MOCK_BUS_START_LOCATION.lat + seed,
+        lng: MOCK_BUS_START_LOCATION.lng + seed,
+    };
+
     const initialBusData = {
-      location: { ...MOCK_BUS_START_LOCATION },
+      location: { ...busStartLocation },
       status: 'normal' as 'normal' | 'breakdown',
       speed: 40,
     };
@@ -59,7 +86,7 @@ export default function TrackerPage() {
     busDataRef.current = initialBusData;
     setTrafficData(MOCK_TRAFFIC_DATA);
     setError(null);
-  }, []);
+  }, [busId]);
 
   useEffect(() => {
     const simulationInterval = setInterval(() => {
@@ -112,8 +139,22 @@ export default function TrackerPage() {
       );
       const calculatedEta = calculateETA(distance, busData.speed, trafficData?.level);
       setEta(calculatedEta);
+
+      // Proximity notification logic
+      if (calculatedEta !== null && calculatedEta * 60 <= 40 && !notificationSentRef.current) {
+        toast({
+          title: "Bus is Arriving Soon!",
+          description: `Bus ${busId} is less than 40 seconds away.`,
+        });
+        notificationSentRef.current = true;
+      }
     }
-  }, [userLocation, busData, trafficData]);
+  }, [userLocation, busData, trafficData, toast, busId]);
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/login');
+  };
 
   const renderETA = () => {
     if (busData?.status === 'breakdown') return <span className="text-destructive font-bold">Not Available</span>;
@@ -131,7 +172,7 @@ export default function TrackerPage() {
       <div className="absolute top-4 left-4 z-[1000] w-full max-w-sm">
         <Card className="shadow-2xl">
           <CardHeader>
-            <CardTitle className="font-headline flex items-center gap-2"><Bus className="text-primary"/> Bus Status</CardTitle>
+            <CardTitle className="font-headline flex items-center gap-2"><Bus className="text-primary"/> Bus {busId} Status</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 text-sm">
             <div className="flex items-center justify-between">
@@ -152,7 +193,11 @@ export default function TrackerPage() {
         </Card>
       </div>
 
-      <div className="absolute top-4 right-4 z-[1000]">
+      <div className="absolute top-4 right-4 z-[1000] flex gap-2">
+         <Button variant="secondary" size="icon" className="shadow-2xl" onClick={() => router.push('/bus-selection')}>
+            <Bus size={20} />
+            <span className="sr-only">Change Bus</span>
+         </Button>
         <Card className="shadow-2xl">
             <CardContent className="p-3 flex items-center gap-3">
                  <Avatar>
@@ -162,7 +207,7 @@ export default function TrackerPage() {
                 <div className="text-sm">
                     <p className="font-semibold">{user?.displayName || user?.email}</p>
                 </div>
-                <Button variant="ghost" size="icon" onClick={logout} className="text-muted-foreground hover:text-foreground">
+                <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
                     <LogOut size={20} />
                 </Button>
             </CardContent>

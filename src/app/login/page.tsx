@@ -55,7 +55,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      router.push('/');
+      router.push('/bus-selection');
     }
   }, [user, router]);
 
@@ -64,7 +64,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await loginWithEmail(email, password);
-      router.push('/');
+      router.push('/bus-selection');
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -80,7 +80,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await loginWithGoogle();
-      router.push('/');
+      router.push('/bus-selection');
     } catch (error: any) {
       toast({
         variant: "destructive",

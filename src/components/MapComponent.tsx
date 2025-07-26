@@ -18,18 +18,20 @@ interface MapComponentProps {
 
 const customBusIcon = new Icon({
   iconUrl: '/bus-pin.svg',
-  iconSize: [40, 40],
+  iconSize: [48, 48],
+  iconAnchor: [24, 48],
 });
 
 const customUserIcon = new Icon({
     iconUrl: '/user-pin.svg',
-    iconSize: [32, 32],
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
   });
 
 const MapComponent = ({ userLocation, busLocation }: MapComponentProps) => {
   const mapRef = useRef<LeafletMap | null>(null);
   const [mapReady, setMapReady] = useState(false);
-  const [center, setCenter] = useState<Location>({ lat: 34.0522, lng: -118.2437 });
+  const [center, setCenter] = useState<Location>({ lat: 17.3850, lng: 78.4867 });
   
   useEffect(() => {
     if (userLocation) {
