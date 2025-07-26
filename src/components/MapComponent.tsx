@@ -2,7 +2,7 @@
 
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Icon, LatLngExpression } from 'leaflet';
+import { Icon, LatLngExpression, Map as LeafletMap } from 'leaflet';
 import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import RoutingMachine from './RoutingMachine';
