@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
-import { getRoute } from '@/ai/flows/routing-flow';
 
 interface RoutingMachineProps {
   map: L.Map;
@@ -11,24 +10,34 @@ interface RoutingMachineProps {
   onRouteFound: (coordinates: L.LatLng[]) => void;
 }
 
-const RoutingMachine = ({ map, start, end, apiKey, onRouteFound }: RoutingMachineProps) => {
+const RoutingMachine = ({ map, start, end, onRouteFound, apiKey }: RoutingMachineProps) => {
   const routingLayerRef = useRef<L.Polyline | null>(null);
 
   useEffect(() => {
-    if (!map || !start || !end) return;
+    if (!map || !start || !end || !apiKey) return;
 
     const fetchRoute = async () => {
+      // Correctly format coordinates for the API: longitude,latitude
+      const startCoords = `${start[1]},${start[0]}`;
+      const endCoords = `${end[1]},${end[0]}`;
+      
+      const url = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${apiKey}&start=${startCoords}&end=${endCoords}`;
+
       try {
-        // Note: The Genkit flow now handles the start/end coordinate mapping.
-        // We pass the locations directly.
-        const data = await getRoute({
-            start: { lat: start[0], lng: start[1] },
-            end: { lat: end[0], lng: end[1] }
-        });
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          const errorBody = await response.json();
+          console.error('OpenRouteService API Error:', errorBody);
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+        
+        const data = await response.json();
         
         if (data && data.features && data.features.length > 0) {
           const route = data.features[0];
-          const coordinates = route.geometry.coordinates.map((coord: any) => L.latLng(coord[1], coord[0]));
+          // Note: The API returns [lng, lat], so we need to reverse for Leaflet which expects [lat, lng]
+          const coordinates = route.geometry.coordinates.map((coord: [number, number]) => L.latLng(coord[1], coord[0]));
           
           if (routingLayerRef.current) {
             map.removeLayer(routingLayerRef.current);
@@ -37,9 +46,7 @@ const RoutingMachine = ({ map, start, end, apiKey, onRouteFound }: RoutingMachin
           const polyline = L.polyline(coordinates, { color: 'hsl(var(--primary))', weight: 6, opacity: 0.8 }).addTo(map);
           routingLayerRef.current = polyline;
           
-          // Fit map to the route bounds
           map.fitBounds(L.latLngBounds(start, end), { padding: [50, 50] });
-         
 
           onRouteFound(coordinates);
         }
