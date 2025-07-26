@@ -41,6 +41,7 @@ const getRouteFlow = ai.defineFlow(
       const response = await fetch(url, {
         method: 'GET',
         headers: {
+            'Authorization': apiKey,
             'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
         }
       });
