@@ -60,19 +60,29 @@ const MapComponent = ({ userLocation, busLocation, onMapReady, routeCoordinates 
   }, [userLocation, onMapReady]);
 
   useEffect(() => {
-    if (mapRef.current) {
-      const tileUrl = theme === 'dark' ? darkTileUrl : lightTileUrl;
-      if (tileLayerRef.current) {
-        tileLayerRef.current.setUrl(tileUrl);
-      } else {
-        tileLayerRef.current = tileLayer(tileUrl, {
-          attribution: theme === 'dark' 
-            ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(mapRef.current);
+    if (!mapRef.current) return;
+  
+    const tileUrl = theme === 'dark' ? darkTileUrl : lightTileUrl;
+    const attribution = theme === 'dark' 
+      ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+      : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+  
+    if (tileLayerRef.current) {
+      // If the tile layer already exists, just update its URL and attribution.
+      tileLayerRef.current.setUrl(tileUrl);
+      if (tileLayerRef.current.getAttribution() !== attribution) {
+        // This is a bit of a workaround as setAttribution is not a public method
+        const newLayer = tileLayer(tileUrl, { attribution });
+        mapRef.current.removeLayer(tileLayerRef.current);
+        tileLayerRef.current = newLayer.addTo(mapRef.current);
       }
+    } else {
+      // If no tile layer exists, create a new one and add it to the map.
+      tileLayerRef.current = tileLayer(tileUrl, { attribution }).addTo(mapRef.current);
     }
-  }, [theme, mapRef, onMapReady, darkTileUrl, lightTileUrl]);
+  
+  }, [theme, darkTileUrl, lightTileUrl]);
+
 
   useEffect(() => {
     if (mapRef.current && userLocation) {

@@ -16,17 +16,20 @@ const RoutingMachine = ({ map, routeCoordinates }: RoutingMachineProps) => {
     // Dynamically import leaflet only on the client-side
     const L = require('leaflet');
 
+    // Remove the old route layer if it exists
     if (routingLayerRef.current) {
         map.removeLayer(routingLayerRef.current);
     }
     
+    // If we have new route coordinates, create and add the new polyline
     if (routeCoordinates && routeCoordinates.length > 0) {
         const polyline = L.polyline(routeCoordinates, { color: 'hsl(var(--primary))', weight: 6, opacity: 0.8 }).addTo(map);
         routingLayerRef.current = polyline;
-        map.fitBounds(L.latLngBounds(routeCoordinates), { padding: [50, 50] });
+        // Don't fit bounds here, let the MapComponent handle it to avoid conflicts.
     }
 
     return () => {
+      // Cleanup function to remove the layer when the component unmounts
       if (routingLayerRef.current && map) {
         try {
           map.removeLayer(routingLayerRef.current);
@@ -35,7 +38,7 @@ const RoutingMachine = ({ map, routeCoordinates }: RoutingMachineProps) => {
         }
       }
     };
-  }, [map, routeCoordinates]);
+  }, [map, routeCoordinates]); // Rerun this effect if the map instance or route coordinates change
 
   return null;
 };
