@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
+import 'leaflet/dist/leaflet.css';
+
 
 export const metadata: Metadata = {
   title: "NaviLoop Tracker",
