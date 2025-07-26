@@ -37,10 +37,21 @@ const getRouteFlow = ai.defineFlow(
     const url = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${apiKey}&start=${startCoords}&end=${endCoords}`;
 
     try {
-      const response = await fetch(url);
+      // Use a GET request as it's simpler and less prone to CORS issues if ever moved client-side
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
+        }
+      });
 
       if (!response.ok) {
-        const errorBody = await response.json();
+        let errorBody;
+        try {
+            errorBody = await response.json();
+        } catch (e) {
+            errorBody = await response.text();
+        }
         console.error('OpenRouteService API Error:', errorBody);
         throw new Error(`API request failed with status ${response.status}`);
       }
