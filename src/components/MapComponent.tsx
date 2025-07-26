@@ -75,7 +75,7 @@ export default function MapComponent({ userLocation, busLocation }: MapComponent
 
   return (
     <div className="w-full h-full">
-        <MapContainer center={[center.lat, center.lng]} zoom={13} style={{ height: '100%', width: '100%' }} scrollWheelZoom={true} whenCreated={() => {}}>
+        <MapContainer center={[center.lat, center.lng]} zoom={13} style={{ height: '100%', width: '100%' }} scrollWheelZoom={true}>
             <ChangeView center={[center.lat, center.lng]} zoom={15} />
             <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

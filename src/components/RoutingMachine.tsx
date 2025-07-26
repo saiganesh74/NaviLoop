@@ -30,7 +30,7 @@ const RoutingMachine = ({ start, end, apiKey }: RoutingMachineProps) => {
         }
       }),
       lineOptions: {
-        styles: [{ color: "#2E9AFE", weight: 5, opacity: 0.8 }],
+        styles: [{ color: "hsl(var(--primary))", weight: 5, opacity: 0.8 }],
       },
       show: false,
       addWaypoints: false,
