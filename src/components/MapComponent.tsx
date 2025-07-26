@@ -1,11 +1,16 @@
 'use client';
 
 import 'leaflet/dist/leaflet.css';
-import { Icon, Map as LeafletMap, map as createMap, tileLayer, marker, LatLng } from 'leaflet';
+import { Icon, Map as LeafletMap, map as createMap, tileLayer, marker, LatLng, polyline } from 'leaflet';
 import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
-import RoutingMachine from './RoutingMachine';
 import { useTheme } from 'next-themes';
+
+declare global {
+  interface Window {
+    L: typeof import('leaflet');
+  }
+}
 
 interface Location {
   lat: number;
@@ -15,7 +20,7 @@ interface Location {
 interface MapComponentProps {
   userLocation: Location | null;
   busLocation: Location | undefined | null;
-  onRouteFound: (coordinates: LatLng[]) => void;
+  routeCoordinates: LatLng[];
 }
 
 const customBusIcon = new Icon({
@@ -30,11 +35,12 @@ const customUserIcon = new Icon({
     iconAnchor: [25, 50],
   });
 
-const MapComponent = ({ userLocation, busLocation, onRouteFound }: MapComponentProps) => {
+const MapComponent = ({ userLocation, busLocation, routeCoordinates }: MapComponentProps) => {
   const mapRef = useRef<LeafletMap | null>(null);
   const userMarkerRef = useRef<L.Marker | null>(null);
   const busMarkerRef = useRef<L.Marker | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const routeLayerRef = useRef<L.Polyline | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const { theme } = useTheme();
 
@@ -42,7 +48,8 @@ const MapComponent = ({ userLocation, busLocation, onRouteFound }: MapComponentP
   const darkTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
   
   useEffect(() => {
-    if (mapRef.current === null) {
+    if (mapRef.current === null && typeof window !== 'undefined') {
+      window.L = require('leaflet');
       const mapElement = document.getElementById('map');
       if (mapElement && !(mapElement as any)._leaflet_id) {
         const initialCenter = userLocation || { lat: 17.3850, lng: 78.4867 };
@@ -94,6 +101,22 @@ const MapComponent = ({ userLocation, busLocation, onRouteFound }: MapComponentP
       }
     }
   }, [busLocation, mapReady]);
+  
+  // Draw route
+  useEffect(() => {
+      if (mapRef.current && routeCoordinates.length > 0 && window.L) {
+          if (routeLayerRef.current) {
+              mapRef.current.removeLayer(routeLayerRef.current);
+          }
+          const newPolyline = polyline(routeCoordinates, { color: 'hsl(var(--primary))', weight: 6, opacity: 0.8 }).addTo(mapRef.current);
+          routeLayerRef.current = newPolyline;
+          
+          if(userLocation && busLocation){
+            mapRef.current.fitBounds(window.L.latLngBounds([userLocation.lat, userLocation.lng], [busLocation.lat, busLocation.lng]), { padding: [50, 50] });
+          }
+
+      }
+  }, [routeCoordinates, userLocation, busLocation]);
 
 
   const apiKey = process.env.NEXT_PUBLIC_OPENROUTESERVICE_API_KEY;
@@ -121,17 +144,11 @@ const MapComponent = ({ userLocation, busLocation, onRouteFound }: MapComponentP
 
   return (
     <div className="w-full h-full" id="map">
-       {mapReady && mapRef.current && userLocation && busLocation && (
-          <RoutingMachine
-              map={mapRef.current}
-              start={[userLocation.lat, userLocation.lng]}
-              end={[busLocation.lat, busLocation.lng]}
-              apiKey={apiKey}
-              onRouteFound={onRouteFound}
-          />
-       )}
+       {/* RoutingMachine is no longer used here, routing is handled in TrackerPage */}
     </div>
   );
 };
 
 export default MapComponent;
+
+    

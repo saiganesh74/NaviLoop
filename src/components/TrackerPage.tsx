@@ -12,8 +12,9 @@ import { Skeleton } from './ui/skeleton';
 import dynamic from 'next/dynamic';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import L from 'leaflet';
+import { getRoute } from '@/ai/flows/routing-flow';
 import { ThemeToggle } from './ThemeToggle';
+import type { LatLng } from 'leaflet';
 
 
 interface Location {
@@ -43,7 +44,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
   const [trafficData, setTrafficData] = useState<TrafficData | null>(null);
   const [eta, setEta] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [route, setRoute] = useState<L.LatLng[]>([]);
+  const [route, setRoute] = useState<LatLng[]>([]);
   
   const routeIndexRef = useRef(0);
   const simulationIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -56,7 +57,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
     loading: () => <Skeleton className="h-full w-full" />,
    }), []);
 
-  const handleRouteFound = useCallback((coordinates: L.LatLng[]) => {
+  const handleRouteFound = useCallback((coordinates: LatLng[]) => {
       setRoute(coordinates);
       if (coordinates.length > 0) {
         setBusData(prev => prev ? {...prev, location: { lat: coordinates[0].lat, lng: coordinates[0].lng }} : {
@@ -105,6 +106,28 @@ export default function TrackerPage({ busId }: { busId: string }) {
     setError(null);
   }, [busId]);
 
+
+  useEffect(() => {
+    const fetchAndSetRoute = async () => {
+        if (userLocation && busData?.location) {
+            try {
+                const routeData = await getRoute({ start: busData.location, end: userLocation });
+                const leafletRoute = routeData.coordinates.map(c => ({ lat: c.lat, lng: c.lng } as LatLng));
+                handleRouteFound(leafletRoute);
+            } catch (e: any) {
+                console.error("Failed to fetch route via flow", e);
+                setError("Could not calculate the bus route.");
+                toast({
+                    variant: "destructive",
+                    title: "Routing Error",
+                    description: e.message || "Could not calculate the bus route.",
+                });
+            }
+        }
+    };
+    fetchAndSetRoute();
+  }, [userLocation, busData?.location, handleRouteFound, toast]);
+
   const moveBus = useCallback(() => {
     setBusData(prevBusData => {
       if (!prevBusData || !route || route.length === 0 || routeIndexRef.current >= route.length - 1) {
@@ -138,16 +161,16 @@ export default function TrackerPage({ busId }: { busId: string }) {
 
 
   useEffect(() => {
-    if (userLocation && busData) {
+    if (userLocation && busData && route.length > 0 && window.L) {
       if (busData.status === 'breakdown') {
         setEta(null);
         return;
       }
       
       let remainingDistance = 0;
-      if (route.length > 0 && routeIndexRef.current < route.length - 1) {
+      if (routeIndexRef.current < route.length - 1) {
         for (let i = routeIndexRef.current; i < route.length - 1; i++) {
-            remainingDistance += route[i].distanceTo(route[i+1]);
+            remainingDistance += window.L.latLng(route[i]).distanceTo(window.L.latLng(route[i+1]));
         }
       }
       remainingDistance = remainingDistance / 1000; // convert to KM
@@ -186,7 +209,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
         <MapComponent 
             userLocation={userLocation} 
             busLocation={busData?.location}
-            onRouteFound={handleRouteFound}
+            routeCoordinates={route}
         />
       
       <div className="absolute top-4 left-4 z-[1000] w-full max-w-sm">
@@ -267,3 +290,5 @@ export default function TrackerPage({ busId }: { busId: string }) {
     </div>
   );
 }
+
+    

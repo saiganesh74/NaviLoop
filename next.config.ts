@@ -34,6 +34,24 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+       {
+        protocol: 'https',
+        hostname: 'a.basemaps.cartocdn.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'b.basemaps.cartocdn.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'c.basemaps.cartocdn.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
   env: {
