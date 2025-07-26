@@ -101,7 +101,7 @@ const MapComponent = ({ userLocation, busLocation, routeCoordinates }: MapCompon
   
   // Draw route
   useEffect(() => {
-      if (mapRef.current && routeCoordinates.length > 0 && window.L) {
+      if (mapRef.current && routeCoordinates.length > 0 && mapReady && window.L) {
           if (routeLayerRef.current) {
               mapRef.current.removeLayer(routeLayerRef.current);
           }
@@ -111,7 +111,7 @@ const MapComponent = ({ userLocation, busLocation, routeCoordinates }: MapCompon
           // Fit the map to the bounds of the entire route polyline
           mapRef.current.fitBounds(newPolyline.getBounds(), { padding: [50, 50] });
       }
-  }, [routeCoordinates]);
+  }, [routeCoordinates, mapReady]);
 
 
   const apiKey = process.env.NEXT_PUBLIC_OPENROUTESERVICE_API_KEY;
