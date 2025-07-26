@@ -72,7 +72,7 @@ const MapComponent = ({ userLocation, busLocation, onMapReady, routeCoordinates 
         }).addTo(mapRef.current);
       }
     }
-  }, [theme]);
+  }, [theme, mapRef, onMapReady, darkTileUrl, lightTileUrl]);
 
   useEffect(() => {
     if (mapRef.current && userLocation) {
