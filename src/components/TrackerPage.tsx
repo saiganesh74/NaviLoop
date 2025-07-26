@@ -51,52 +51,57 @@ export default function TrackerPage() {
    }), []);
 
   useEffect(() => {
+    // Mock data setup
     setUserLocation(MOCK_USER_LOCATION);
     setBusData(MOCK_BUS_DATA);
     setTrafficData(MOCK_TRAFFIC_DATA);
     
-    // if (navigator.geolocation) {
-    //   const watchId = navigator.geolocation.watchPosition(
-    //     (position) => {
-    //       setUserLocation({
-    //         lat: position.coords.latitude,
-    //         lng: position.coords.longitude,
-    //       });
-    //       setError(null);
-    //     },
-    //     (error) => {
-    //       setError('Geolocation error: ' + error.message);
-    //       console.error("Geolocation error:", error);
-    //     },
-    //     { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-    //   );
-    //   return () => navigator.geolocation.clearWatch(watchId);
-    // } else {
-    //   setError("Geolocation is not supported by this browser.");
-    // }
-  }, []);
+    // Uncomment the following section to use real geolocation and Firebase data
+    /*
+    if (navigator.geolocation) {
+      const watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+          setError(null);
+        },
+        (error) => {
+          setError('Geolocation error: ' + error.message);
+          console.error("Geolocation error:", error);
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      );
+      // return () => navigator.geolocation.clearWatch(watchId);
+    } else {
+      setError("Geolocation is not supported by this browser.");
+    }
 
-  useEffect(() => {
-    // const busRef = ref(db, 'bus');
-    // const unsubscribeBus = onValue(busRef, (snapshot) => {
-    //   if (snapshot.exists()) {
-    //     setBusData(snapshot.val());
-    //   } else {
-    //     setError("Bus data not available.");
-    //   }
-    // });
+    const busRef = ref(db, 'bus');
+    const unsubscribeBus = onValue(busRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setBusData(snapshot.val());
+      } else {
+        setError("Bus data not available.");
+      }
+    });
 
-    // const trafficRef = ref(db, 'traffic');
-    // const unsubscribeTraffic = onValue(trafficRef, (snapshot) => {
-    //   if (snapshot.exists()) {
-    //     setTrafficData(snapshot.val());
-    //   }
-    // });
+    const trafficRef = ref(db, 'traffic');
+    const unsubscribeTraffic = onValue(trafficRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setTrafficData(snapshot.val());
+      }
+    });
 
-    // return () => {
-    //   unsubscribeBus();
-    //   unsubscribeTraffic();
-    // };
+    return () => {
+      unsubscribeBus();
+      unsubscribeTraffic();
+      if (navigator.geolocation && watchId) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
+    */
   }, []);
 
   useEffect(() => {
@@ -127,9 +132,9 @@ export default function TrackerPage() {
   
   return (
     <div className="relative h-screen w-screen overflow-hidden">
-      <MapComponent userLocation={userLocation} busLocation={busData?.location} />
+        <MapComponent userLocation={userLocation} busLocation={busData?.location} />
       
-      <div className="absolute top-4 left-4 z-10 w-full max-w-sm">
+      <div className="absolute top-4 left-4 z-[1000] w-full max-w-sm">
         <Card className="shadow-2xl">
           <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2"><Bus className="text-primary"/> Bus Status</CardTitle>
@@ -153,7 +158,7 @@ export default function TrackerPage() {
         </Card>
       </div>
 
-      <div className="absolute top-4 right-4 z-10">
+      <div className="absolute top-4 right-4 z-[1000]">
         <Card className="shadow-2xl">
             <CardContent className="p-3 flex items-center gap-3">
                  <Avatar>
@@ -171,7 +176,7 @@ export default function TrackerPage() {
       </div>
       
       {(busData?.status === 'breakdown' || error) && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 w-full max-w-md">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-md">
             <Alert variant="destructive" className="shadow-2xl bg-accent text-accent-foreground border-accent">
                 <AlertTriangle className="h-4 w-4 !text-accent-foreground" />
                 <AlertTitle className="font-bold">{busData?.status === 'breakdown' ? 'Bus Breakdown!' : 'Alert'}</AlertTitle>
@@ -183,7 +188,7 @@ export default function TrackerPage() {
       )}
 
       {(!userLocation || !busData) && (
-        <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-20">
+        <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-[2000]">
             <Card className="p-8 text-center">
                 <CardHeader>
                     <CardTitle>Connecting to NaviLoop...</CardTitle>

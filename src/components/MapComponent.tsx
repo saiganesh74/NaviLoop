@@ -1,9 +1,8 @@
 'use client';
 
-import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Icon, LatLngExpression, Map } from 'leaflet';
-import React, { useEffect, useState } from 'react';
+import { Icon, LatLngExpression, Map as LeafletMap, map as createMap, tileLayer, marker, icon } from 'leaflet';
+import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import RoutingMachine from './RoutingMachine';
 
@@ -27,17 +26,9 @@ const customUserIcon = new Icon({
     iconSize: [32, 32],
   });
 
-function ChangeView({ center, zoom } : {center: LatLngExpression, zoom: number}) {
-  const map = useMap();
-  useEffect(() => {
-    if (map) {
-      map.setView(center, zoom);
-    }
-  }, [map, center, zoom]);
-  return null;
-}
-
 const MapComponent = ({ userLocation, busLocation }: MapComponentProps) => {
+  const mapRef = useRef<LeafletMap | null>(null);
+  const [mapReady, setMapReady] = useState(false);
   const [center, setCenter] = useState<Location>({ lat: 34.0522, lng: -118.2437 });
   
   useEffect(() => {
@@ -45,6 +36,57 @@ const MapComponent = ({ userLocation, busLocation }: MapComponentProps) => {
       setCenter(userLocation);
     }
   }, [userLocation]);
+
+
+  useEffect(() => {
+    if (mapRef.current === null) {
+      const mapElement = document.getElementById('map');
+      if (mapElement && !(mapElement as any)._leaflet_id) {
+        const leafletMap = createMap('map').setView([center.lat, center.lng], 13);
+        mapRef.current = leafletMap;
+
+        tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(leafletMap);
+
+        setMapReady(true);
+      }
+    }
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, []); // Empty dependency array ensures this runs only once
+
+  useEffect(() => {
+    if (mapRef.current && userLocation) {
+      mapRef.current.setView([userLocation.lat, userLocation.lng], 15);
+    }
+  }, [userLocation, mapReady]);
+
+
+  // Add/Update markers
+  useEffect(() => {
+    if (mapRef.current && mapReady) {
+      // Clear existing markers before adding new ones
+      mapRef.current.eachLayer((layer) => {
+        if (layer instanceof L.Marker) {
+          mapRef.current?.removeLayer(layer);
+        }
+      });
+      
+      if (userLocation) {
+        marker([userLocation.lat, userLocation.lng], { icon: customUserIcon }).addTo(mapRef.current);
+      }
+      if (busLocation) {
+        marker([busLocation.lat, busLocation.lng], { icon: customBusIcon }).addTo(mapRef.current);
+      }
+    }
+  }, [userLocation, busLocation, mapReady]);
+
 
   const apiKey = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjI1ODQ2ZTZjMzg0NjRmZmM4OTNmYmNiZmM3MzljN2NjIiwiaCI6Im11cm11cjY0In0=";
 
@@ -69,38 +111,16 @@ const MapComponent = ({ userLocation, busLocation }: MapComponentProps) => {
     );
   }
 
-  const userPosition: LatLngExpression | undefined = userLocation ? [userLocation.lat, userLocation.lng] : undefined;
-  const busPosition: LatLngExpression | undefined = busLocation ? [busLocation.lat, busLocation.lng] : undefined;
-
   return (
-    <div className="w-full h-full">
-        <MapContainer 
-            center={[center.lat, center.lng]} 
-            zoom={13} 
-            style={{ height: '100%', width: '100%' }} 
-            scrollWheelZoom={true}
-        >
-            <ChangeView center={[center.lat, center.lng]} zoom={15} />
-            <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            {userPosition && (
-                <Marker position={userPosition} icon={customUserIcon}>
-                </Marker>
-            )}
-            {busPosition && (
-                    <Marker position={busPosition} icon={customBusIcon}>
-                    </Marker>
-            )}
-            {userLocation && busLocation && (
-                <RoutingMachine
-                    start={[userLocation.lat, userLocation.lng]}
-                    end={[busLocation.lat, busLocation.lng]}
-                    apiKey={apiKey}
-                />
-            )}
-        </MapContainer>
+    <div className="w-full h-full" id="map">
+       {mapReady && mapRef.current && userLocation && busLocation && (
+          <RoutingMachine
+              map={mapRef.current}
+              start={[userLocation.lat, userLocation.lng]}
+              end={[busLocation.lat, busLocation.lng]}
+              apiKey={apiKey}
+          />
+       )}
     </div>
   );
 };

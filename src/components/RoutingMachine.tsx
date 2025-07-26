@@ -3,17 +3,16 @@ import { useEffect } from "react";
 import L from "leaflet";
 import "leaflet-routing-machine";
 import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
-import { useMap } from "react-leaflet";
+
 
 interface RoutingMachineProps {
+    map: L.Map;
     start: [number, number];
     end: [number, number];
     apiKey: string;
 }
 
-const RoutingMachine = ({ start, end, apiKey }: RoutingMachineProps) => {
-  const map = useMap();
-
+const RoutingMachine = ({ map, start, end, apiKey }: RoutingMachineProps) => {
   useEffect(() => {
     if (!map) return;
 
