@@ -14,8 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { getRoute } from '@/ai/flows/routing-flow';
 import { ThemeToggle } from './ThemeToggle';
-import type { LatLng, Map as LeafletMap } from 'leaflet';
-import RoutingMachine from './RoutingMachine';
+import type { LatLng, Map as LeafletMap, Polyline } from 'leaflet';
 
 
 interface Location {
@@ -51,6 +50,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
   
   const routeIndexRef = useRef(0);
   const simulationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const polylineRef = useRef<Polyline | null>(null);
 
   const notificationSentRef = useRef(false);
   const { toast } = useToast();
@@ -131,7 +131,6 @@ export default function TrackerPage({ busId }: { busId: string }) {
         }
     };
     
-    // Only fetch route when we have locations but no route yet.
     if (userLocation && busData?.location && route.length === 0) {
         fetchAndSetRoute();
     }
@@ -171,6 +170,17 @@ export default function TrackerPage({ busId }: { busId: string }) {
       }
     };
   }, [route, busData?.status, moveBus]);
+  
+  
+  useEffect(() => {
+    if (!map || typeof window === 'undefined' || !window.L) return;
+
+    if (!polylineRef.current) {
+        polylineRef.current = window.L.polyline(routeTrace, { color: 'hsl(var(--primary))', weight: 6, opacity: 0.8 }).addTo(map);
+    } else {
+        polylineRef.current.setLatLngs(routeTrace);
+    }
+  }, [map, routeTrace]);
 
 
   useEffect(() => {
@@ -229,7 +239,6 @@ export default function TrackerPage({ busId }: { busId: string }) {
             onMapReady={handleMapReady}
             routeCoordinates={route}
         />
-        {map && <RoutingMachine map={map} routeCoordinates={routeTrace} />}
       
       <div className="absolute top-4 left-4 z-[1000] w-full max-w-sm">
         <Card className="shadow-2xl">
