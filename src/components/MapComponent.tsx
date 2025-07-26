@@ -1,7 +1,7 @@
 'use client';
 
 import 'leaflet/dist/leaflet.css';
-import { Icon, Map as LeafletMap, map as createMap, tileLayer, marker, LatLng, polyline } from 'leaflet';
+import { Icon, Map as LeafletMap, map as createMap, tileLayer, marker, LatLng, polyline, latLngBounds } from 'leaflet';
 import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import { useTheme } from 'next-themes';
@@ -82,11 +82,8 @@ const MapComponent = ({ userLocation, busLocation, routeCoordinates }: MapCompon
       } else {
         userMarkerRef.current.setLatLng([userLocation.lat, userLocation.lng]);
       }
-      if (mapReady) {
-        mapRef.current.setView([userLocation.lat, userLocation.lng], mapRef.current.getZoom() || 15);
-      }
     }
-  }, [userLocation, mapReady]);
+  }, [userLocation]);
 
 
   // Add/Update markers
@@ -111,12 +108,10 @@ const MapComponent = ({ userLocation, busLocation, routeCoordinates }: MapCompon
           const newPolyline = polyline(routeCoordinates, { color: 'hsl(var(--primary))', weight: 6, opacity: 0.8 }).addTo(mapRef.current);
           routeLayerRef.current = newPolyline;
           
-          if(userLocation && busLocation){
-            mapRef.current.fitBounds(window.L.latLngBounds([userLocation.lat, userLocation.lng], [busLocation.lat, busLocation.lng]), { padding: [50, 50] });
-          }
-
+          // Fit the map to the bounds of the entire route polyline
+          mapRef.current.fitBounds(newPolyline.getBounds(), { padding: [50, 50] });
       }
-  }, [routeCoordinates, userLocation, busLocation]);
+  }, [routeCoordinates]);
 
 
   const apiKey = process.env.NEXT_PUBLIC_OPENROUTESERVICE_API_KEY;
@@ -144,11 +139,9 @@ const MapComponent = ({ userLocation, busLocation, routeCoordinates }: MapCompon
 
   return (
     <div className="w-full h-full" id="map">
-       {/* RoutingMachine is no longer used here, routing is handled in TrackerPage */}
+       {/* Routing is handled in TrackerPage and coordinates are passed down */}
     </div>
   );
 };
 
 export default MapComponent;
-
-    
