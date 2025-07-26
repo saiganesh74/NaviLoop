@@ -3,29 +3,16 @@
  * @fileOverview A routing agent that uses OpenRouteService.
  *
  * - getRoute - A function that fetches a route between two points.
- * - GetRouteInput - The input type for the getRoute function.
- * - GetRouteOutput - The return type for the getRoute function.
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit/zod';
+import {
+  GetRouteInputSchema,
+  GetRouteOutputSchema,
+  type GetRouteInput,
+  type GetRouteOutput,
+} from '@/ai/schemas/routing-schema';
 import fetch from 'node-fetch';
-
-const LatLngSchema = z.object({
-  lat: z.number(),
-  lng: z.number(),
-});
-
-export const GetRouteInputSchema = z.object({
-  start: LatLngSchema,
-  end: LatLngSchema,
-});
-
-export type GetRouteInput = z.infer<typeof GetRouteInputSchema>;
-
-// The output can be anything since we're just proxying the response
-export const GetRouteOutputSchema = z.any();
-export type GetRouteOutput = z.infer<typeof GetRouteOutputSchema>;
 
 export async function getRoute(input: GetRouteInput): Promise<GetRouteOutput> {
   return getRouteFlow(input);
