@@ -13,7 +13,6 @@ import dynamic from 'next/dynamic';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import L from 'leaflet';
-import { getRoute } from '@/ai/flows/routing-flow';
 import { ThemeToggle } from './ThemeToggle';
 
 
@@ -60,7 +59,11 @@ export default function TrackerPage({ busId }: { busId: string }) {
   const handleRouteFound = useCallback((coordinates: L.LatLng[]) => {
       setRoute(coordinates);
       if (coordinates.length > 0) {
-        setBusData(prev => prev ? {...prev, location: { lat: coordinates[0].lat, lng: coordinates[0].lng }} : null);
+        setBusData(prev => prev ? {...prev, location: { lat: coordinates[0].lat, lng: coordinates[0].lng }} : {
+          location: { lat: coordinates[0].lat, lng: coordinates[0].lng },
+          status: 'normal',
+          speed: 40,
+        });
       }
       routeIndexRef.current = 0; 
   }, []);
@@ -101,24 +104,6 @@ export default function TrackerPage({ busId }: { busId: string }) {
     setTrafficData(MOCK_TRAFFIC_DATA);
     setError(null);
   }, [busId]);
-
-
-  // Fetch route when user and bus locations are available
-  useEffect(() => {
-    if (userLocation && busData?.location) {
-      getRoute({ start: busData.location, end: userLocation })
-        .then(data => {
-          if (data && data.coordinates) {
-             const leafletRoute = data.coordinates.map(coord => new L.LatLng(coord[0], coord[1]));
-             handleRouteFound(leafletRoute);
-          }
-        })
-        .catch(err => {
-            console.error("Failed to fetch route:", err);
-            setError("Could not calculate the bus route.");
-        });
-    }
-  }, [userLocation, busData?.location.lat, busData?.location.lng, handleRouteFound]);
 
   const moveBus = useCallback(() => {
     setBusData(prevBusData => {
@@ -189,7 +174,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
     if (busData?.status === 'breakdown') return <span className="text-destructive font-bold">Not Available</span>;
     if (eta === null) return <span>Calculating...</span>;
     if (eta === Infinity) return <span>Bus is not moving</span>;
-    if (routeIndexRef.current >= route.length -1) return <span className="text-green-600 font-bold">Arrived</span>;
+    if (route.length > 0 && routeIndexRef.current >= route.length -1) return <span className="text-green-600 font-bold">Arrived</span>;
     if (eta < 1/60) return <span className="text-green-600 font-bold">Arriving now</span>;
     const minutes = Math.floor(eta);
     const seconds = Math.floor((eta * 60) % 60);
