@@ -19,14 +19,14 @@ interface MapComponentProps {
 
 const customBusIcon = new Icon({
   iconUrl: '/bus-pin.svg',
-  iconSize: [48, 48],
-  iconAnchor: [24, 48],
+  iconSize: [60, 60],
+  iconAnchor: [30, 60],
 });
 
 const customUserIcon = new Icon({
     iconUrl: '/user-pin.svg',
-    iconSize: [40, 40],
-    iconAnchor: [20, 40],
+    iconSize: [50, 50],
+    iconAnchor: [25, 50],
   });
 
 const MapComponent = ({ userLocation, busLocation, onRouteFound }: MapComponentProps) => {

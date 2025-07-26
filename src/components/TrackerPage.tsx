@@ -42,7 +42,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
   const [eta, setEta] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [route, setRoute] = useState<L.LatLng[]>([]);
-  const [routeIndex, setRouteIndex] = useState(0);
+  const routeIndexRef = useRef(0);
 
   const notificationSentRef = useRef(false);
   const { toast } = useToast();
@@ -53,12 +53,9 @@ export default function TrackerPage({ busId }: { busId: string }) {
    }), []);
 
   const handleRouteFound = useCallback((coordinates: L.LatLng[]) => {
-    // Only set the route if it's a new route
-    if (coordinates.length > 0 && (route.length === 0 || coordinates[0].lat !== route[0].lat)) {
       setRoute(coordinates);
-      setRouteIndex(0); // Reset bus position on new route
-    }
-  }, [route]);
+      routeIndexRef.current = 0; // Reset bus position on new route
+  }, []);
 
 
   useEffect(() => {
@@ -96,26 +93,22 @@ export default function TrackerPage({ busId }: { busId: string }) {
 
   useEffect(() => {
     const simulationInterval = setInterval(() => {
-        if (route.length === 0 || routeIndex >= route.length -1 || busData?.status === 'breakdown') {
+        if (route.length === 0 || routeIndexRef.current >= route.length -1 || busData?.status === 'breakdown') {
             return;
         }
+        
+        routeIndexRef.current = Math.min(routeIndexRef.current + 1, route.length - 1);
+        const newPos = route[routeIndexRef.current];
 
-        setRouteIndex(prevIndex => {
-            const nextIndex = Math.min(prevIndex + 1, route.length - 1);
-            const newPos = route[nextIndex];
-            
-            setBusData(prevBusData => {
-              if (!prevBusData) return null;
-              return { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng }};
-            });
-
-            return nextIndex;
+        setBusData(prevBusData => {
+            if (!prevBusData) return null;
+            return { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng }};
         });
 
-    }, 2000); // Update every 2 seconds
+    }, 3000); // Update every 3 seconds
 
     return () => clearInterval(simulationInterval);
-  }, [route, routeIndex, busData?.status]);
+  }, [route, busData?.status]);
 
 
   useEffect(() => {
@@ -127,8 +120,8 @@ export default function TrackerPage({ busId }: { busId: string }) {
       
       // Calculate remaining distance along the route
       let remainingDistance = 0;
-      if (route.length > 0 && routeIndex < route.length - 1) {
-        for (let i = routeIndex; i < route.length - 1; i++) {
+      if (route.length > 0 && routeIndexRef.current < route.length - 1) {
+        for (let i = routeIndexRef.current; i < route.length - 1; i++) {
             remainingDistance += route[i].distanceTo(route[i+1]);
         }
       }
@@ -145,7 +138,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
         notificationSentRef.current = true;
       }
     }
-  }, [userLocation, busData, trafficData, toast, busId, route, routeIndex]);
+  }, [userLocation, busData, trafficData, toast, busId, route]);
 
   const handleLogout = async () => {
     await logout();
