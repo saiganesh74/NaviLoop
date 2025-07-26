@@ -109,6 +109,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
 
   useEffect(() => {
     const fetchAndSetRoute = async () => {
+        // We only fetch the route if we have a user location and an initial bus location.
         if (userLocation && busData?.location) {
             try {
                 const routeData = await getRoute({ start: busData.location, end: userLocation });
@@ -116,7 +117,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
                 handleRouteFound(leafletRoute);
             } catch (e: any) {
                 console.error("Failed to fetch route via flow", e);
-                setError("Could not calculate the bus route.");
+                setError(e.message || "Could not calculate the bus route.");
                 toast({
                     variant: "destructive",
                     title: "Routing Error",
@@ -125,8 +126,13 @@ export default function TrackerPage({ busId }: { busId: string }) {
             }
         }
     };
-    fetchAndSetRoute();
-  }, [userLocation, busData?.location, handleRouteFound, toast]);
+    
+    // We only want to run this effect when userLocation is first available, or if the busId changes.
+    // We do NOT want to run it every time busData.location changes.
+    if (userLocation) {
+        fetchAndSetRoute();
+    }
+  }, [userLocation, busId, handleRouteFound, toast]);
 
   const moveBus = useCallback(() => {
     setBusData(prevBusData => {
@@ -161,7 +167,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
 
 
   useEffect(() => {
-    if (userLocation && busData && route.length > 0 && window.L) {
+    if (userLocation && busData && route.length > 0 && typeof window !== 'undefined' && window.L) {
       if (busData.status === 'breakdown') {
         setEta(null);
         return;
@@ -178,10 +184,10 @@ export default function TrackerPage({ busId }: { busId: string }) {
       const calculatedEta = calculateETA(remainingDistance, busData.speed, trafficData?.level);
       setEta(calculatedEta);
 
-      if (calculatedEta !== null && calculatedEta * 60 <= 40 && !notificationSentRef.current) {
+      if (calculatedEta !== null && calculatedEta <= 1 && !notificationSentRef.current) {
         toast({
           title: "Bus is Arriving Soon!",
-          description: `Bus ${busId} is less than 40 seconds away.`,
+          description: `Bus ${busId} is less than a minute away.`,
         });
         notificationSentRef.current = true;
       }
@@ -290,5 +296,3 @@ export default function TrackerPage({ busId }: { busId: string }) {
     </div>
   );
 }
-
-    
