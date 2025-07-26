@@ -50,48 +50,48 @@ export default function TrackerPage() {
     setBusData(MOCK_BUS_DATA);
     setTrafficData(MOCK_TRAFFIC_DATA);
     
-    if (navigator.geolocation) {
-      const watchId = navigator.geolocation.watchPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-          setError(null);
-        },
-        (error) => {
-          setError('Geolocation error: ' + error.message);
-          console.error("Geolocation error:", error);
-        },
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-      );
-      return () => navigator.geolocation.clearWatch(watchId);
-    } else {
-      setError("Geolocation is not supported by this browser.");
-    }
+    // if (navigator.geolocation) {
+    //   const watchId = navigator.geolocation.watchPosition(
+    //     (position) => {
+    //       setUserLocation({
+    //         lat: position.coords.latitude,
+    //         lng: position.coords.longitude,
+    //       });
+    //       setError(null);
+    //     },
+    //     (error) => {
+    //       setError('Geolocation error: ' + error.message);
+    //       console.error("Geolocation error:", error);
+    //     },
+    //     { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+    //   );
+    //   return () => navigator.geolocation.clearWatch(watchId);
+    // } else {
+    //   setError("Geolocation is not supported by this browser.");
+    // }
   }, []);
 
   useEffect(() => {
-    const busRef = ref(db, 'bus');
-    const unsubscribeBus = onValue(busRef, (snapshot) => {
-      if (snapshot.exists()) {
-        setBusData(snapshot.val());
-      } else {
-        setError("Bus data not available.");
-      }
-    });
+    // const busRef = ref(db, 'bus');
+    // const unsubscribeBus = onValue(busRef, (snapshot) => {
+    //   if (snapshot.exists()) {
+    //     setBusData(snapshot.val());
+    //   } else {
+    //     setError("Bus data not available.");
+    //   }
+    // });
 
-    const trafficRef = ref(db, 'traffic');
-    const unsubscribeTraffic = onValue(trafficRef, (snapshot) => {
-      if (snapshot.exists()) {
-        setTrafficData(snapshot.val());
-      }
-    });
+    // const trafficRef = ref(db, 'traffic');
+    // const unsubscribeTraffic = onValue(trafficRef, (snapshot) => {
+    //   if (snapshot.exists()) {
+    //     setTrafficData(snapshot.val());
+    //   }
+    // });
 
-    return () => {
-      unsubscribeBus();
-      unsubscribeTraffic();
-    };
+    // return () => {
+    //   unsubscribeBus();
+    //   unsubscribeTraffic();
+    // };
   }, []);
 
   useEffect(() => {
