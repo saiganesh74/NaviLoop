@@ -27,7 +27,6 @@ const RoutingMachine = ({ map, routeCoordinates }: RoutingMachineProps) => {
         routingLayerRef.current = polyline;
     }
 
-    // Don't add a cleanup function here, as it can interfere with re-renders
   }, [map, routeCoordinates]); // Rerun this effect if the map instance or route coordinates change
 
   return null;
