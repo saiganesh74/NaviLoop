@@ -18,17 +18,10 @@ const RoutingMachine = ({ map, start, end, apiKey, onRouteFound }: RoutingMachin
 
     const fetchRoute = async () => {
       try {
-        const response = await fetch(`https://api.openrouteservice.org/v2/directions/driving-car/geojson`, {
-          method: 'POST',
-          headers: {
-            'Authorization': apiKey,
-            'Content-Type': 'application/json; charset=utf-8',
-            'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
-          },
-          body: JSON.stringify({ 
-            coordinates: [[start[1], start[0]], [end[1], end[0]]],
-           })
-        });
+        const startCoords = `${start[1]},${start[0]}`;
+        const endCoords = `${end[1]},${end[0]}`;
+        
+        const response = await fetch(`https://api.openrouteservice.org/v2/directions/driving-car?api_key=${apiKey}&start=${startCoords}&end=${endCoords}`);
 
         if (!response.ok) {
             const errorBody = await response.json();
