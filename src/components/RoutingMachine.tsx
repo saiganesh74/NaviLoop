@@ -23,7 +23,6 @@ const RoutingMachine = ({ map, start, end, apiKey, onRouteFound }: RoutingMachin
           headers: {
             'Authorization': apiKey,
             'Content-Type': 'application/json; charset=utf-8',
-            'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
           },
           body: JSON.stringify({ 
             coordinates: [[start[1], start[0]], [end[1], end[0]]],
