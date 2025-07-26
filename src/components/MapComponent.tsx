@@ -44,7 +44,7 @@ const MapComponent = ({ userLocation, busLocation, onMapReady, routeCoordinates 
   const { theme } = useTheme();
 
   const lightTileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-  const darkTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_matter/{z}/{x}/{y}{r}.png';
+  const darkTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
   
   useEffect(() => {
     if (mapRef.current === null && typeof window !== 'undefined') {
@@ -68,20 +68,12 @@ const MapComponent = ({ userLocation, busLocation, onMapReady, routeCoordinates 
       : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
   
     if (tileLayerRef.current) {
-      // If the tile layer already exists, just update its URL and attribution.
-      tileLayerRef.current.setUrl(tileUrl);
-      if (tileLayerRef.current.getAttribution() !== attribution) {
-        // This is a bit of a workaround as setAttribution is not a public method
-        const newLayer = tileLayer(tileUrl, { attribution });
-        mapRef.current.removeLayer(tileLayerRef.current);
-        tileLayerRef.current = newLayer.addTo(mapRef.current);
-      }
-    } else {
-      // If no tile layer exists, create a new one and add it to the map.
-      tileLayerRef.current = tileLayer(tileUrl, { attribution }).addTo(mapRef.current);
+      mapRef.current.removeLayer(tileLayerRef.current);
     }
+    
+    tileLayerRef.current = tileLayer(tileUrl, { attribution }).addTo(mapRef.current);
   
-  }, [theme, darkTileUrl, lightTileUrl]);
+  }, [theme, mapRef.current]);
 
 
   useEffect(() => {
@@ -92,7 +84,7 @@ const MapComponent = ({ userLocation, busLocation, onMapReady, routeCoordinates 
         userMarkerRef.current.setLatLng([userLocation.lat, userLocation.lng]);
       }
     }
-  }, [userLocation]);
+  }, [userLocation, mapRef.current]);
 
 
   // Add/Update markers
@@ -106,7 +98,7 @@ const MapComponent = ({ userLocation, busLocation, onMapReady, routeCoordinates 
         }
       }
     }
-  }, [busLocation]);
+  }, [busLocation, mapRef.current]);
   
   // Fit map to the entire route when available
   useEffect(() => {
@@ -114,7 +106,7 @@ const MapComponent = ({ userLocation, busLocation, onMapReady, routeCoordinates 
         const bounds = latLngBounds(routeCoordinates);
         mapRef.current.fitBounds(bounds, { padding: [50, 50] });
       }
-  }, [routeCoordinates]);
+  }, [routeCoordinates, mapRef.current]);
 
 
   const apiKey = process.env.NEXT_PUBLIC_OPENROUTESERVICE_API_KEY;

@@ -128,10 +128,11 @@ export default function TrackerPage({ busId }: { busId: string }) {
         }
     };
     
+    // Only fetch route when we have locations but no route yet.
     if (userLocation && busData?.location && route.length === 0) {
         fetchAndSetRoute();
     }
-  }, [userLocation, busId, handleRouteFound, toast, busData?.location, route.length]);
+  }, [userLocation, busData?.location, busId, handleRouteFound, toast, route.length]);
 
   const moveBus = useCallback(() => {
     setBusData(prevBusData => {
