@@ -91,10 +91,6 @@ export default function LoginPage() {
         setLoading(false);
     }
   };
-  
-  if (user) {
-    return null; // or a loading spinner
-  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
