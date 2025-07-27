@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -16,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { getRoute } from '@/ai/flows/routing-flow';
 import { ThemeToggle } from './ThemeToggle';
 import type { LatLng, Map as LeafletMap, Polyline } from 'leaflet';
+import { Separator } from './ui/separator';
 
 
 interface Location {
@@ -234,7 +234,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
   }, []);
 
   const renderETA = () => {
-    if (busData?.status === 'breakdown') return <span className="text-destructive font-bold">Not Available</span>;
+    if (busData?.status === 'breakdown') return <span className="font-bold text-destructive">Not Available</span>;
     if (eta === null) return <span>Calculating...</span>;
     if (busData?.speed === 0 && routeIndexRef.current >= route.length -1) return <span className="text-green-600 font-bold">Arrived</span>;
     if (eta === Infinity) return <span>Bus is not moving</span>;
@@ -277,26 +277,25 @@ export default function TrackerPage({ busId }: { busId: string }) {
         </Card>
       </div>
 
-      <div className="absolute top-4 right-4 z-[1000] flex gap-2">
-         <Button variant="secondary" size="icon" className="shadow-2xl" onClick={() => router.push('/bus-selection')}>
+      <div className="absolute top-4 right-4 z-[1000] flex gap-2 items-center bg-background/80 backdrop-blur-sm rounded-full shadow-2xl p-1">
+         <Button variant="ghost" size="icon" className="rounded-full" onClick={() => router.push('/bus-selection')}>
             <Bus size={20} />
             <span className="sr-only">Change Bus</span>
          </Button>
-        <Card className="shadow-2xl">
-            <CardContent className="p-2 flex items-center gap-2">
-                 <Avatar>
-                    <AvatarImage src={user?.photoURL || undefined} />
-                    <AvatarFallback><UserIcon size={20}/></AvatarFallback>
-                </Avatar>
-                <div className="text-sm pr-2">
-                    <p className="font-semibold">{user?.displayName || user?.email}</p>
-                </div>
-                <ThemeToggle />
-                <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
-                    <LogOut size={20} />
-                </Button>
-            </CardContent>
-        </Card>
+         <Separator orientation='vertical' className='h-6'/>
+         <Button variant="ghost" className='rounded-full p-2 h-auto'>
+            <Avatar className='w-7 h-7'>
+                <AvatarImage src={user?.photoURL || undefined} />
+                <AvatarFallback><UserIcon size={16}/></AvatarFallback>
+            </Avatar>
+            <div className="text-sm pr-2 pl-2">
+                <p className="font-semibold">{user?.displayName || user?.email}</p>
+            </div>
+        </Button>
+        <ThemeToggle />
+        <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground hover:text-foreground rounded-full">
+            <LogOut size={20} />
+        </Button>
       </div>
       
       {showArrivalAlert && (
