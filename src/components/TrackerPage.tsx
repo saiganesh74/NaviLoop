@@ -305,7 +305,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
                     <div className="w-24 h-24 rounded-full bg-primary/10 mx-auto flex items-center justify-center mb-4 border">
                         <PartyPopper className="w-12 h-12 text-primary"/>
                     </div>
-                    <CardTitle className="text-3xl font-bold">Bus Arrived!</CardTitle>
+                    <CardTitle className="text-3xl font-bold text-card-foreground">Bus Arrived!</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="text-lg text-muted-foreground">Bus {busId} has reached your location.</p>
