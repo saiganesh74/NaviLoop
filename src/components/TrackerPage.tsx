@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Bus, Clock, LogOut, TrafficCone, AlertTriangle, User as UserIcon } from 'lucide-react';
+import { Bus, Clock, LogOut, TrafficCone, AlertTriangle, User as UserIcon, PartyPopper } from 'lucide-react';
 import { calculateETA } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
 import dynamic from 'next/dynamic';
@@ -47,11 +47,11 @@ export default function TrackerPage({ busId }: { busId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [route, setRoute] = useState<LatLng[]>([]);
   const [map, setMap] = useState<LeafletMap | null>(null);
+  const [showArrivalAlert, setShowArrivalAlert] = useState(false);
   
   const routeIndexRef = useRef(0);
   const polylineRef = useRef<Polyline | null>(null);
   const simulationIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const breakdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
 
   const notificationSentRef = useRef(false);
@@ -67,9 +67,6 @@ export default function TrackerPage({ busId }: { busId: string }) {
     return () => {
       if (simulationIntervalRef.current) {
         clearInterval(simulationIntervalRef.current);
-      }
-      if (breakdownTimeoutRef.current) {
-        clearTimeout(breakdownTimeoutRef.current);
       }
     };
   }, []);
@@ -94,6 +91,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
       if (coordinates.length > 0) {
         const startLocation = { lat: coordinates[0].lat, lng: coordinates[0].lng };
         routeIndexRef.current = 0; 
+        setShowArrivalAlert(false);
 
         setBusData({
           location: startLocation,
@@ -103,7 +101,6 @@ export default function TrackerPage({ busId }: { busId: string }) {
 
         // Clear any existing simulation before starting a new one
         if (simulationIntervalRef.current) clearInterval(simulationIntervalRef.current);
-        if (breakdownTimeoutRef.current) clearTimeout(breakdownTimeoutRef.current);
 
         // Start simulation
         simulationIntervalRef.current = setInterval(() => {
@@ -115,6 +112,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
       
               if (routeIndexRef.current >= coordinates.length - 1) {
                 if(simulationIntervalRef.current) clearInterval(simulationIntervalRef.current);
+                setShowArrivalAlert(true);
                 return { ...prevBusData, speed: 0 };
               }
       
@@ -124,12 +122,14 @@ export default function TrackerPage({ busId }: { busId: string }) {
             });
         }, 2000);
 
-        // Schedule breakdown
-        breakdownTimeoutRef.current = setTimeout(() => {
+        // Schedule breakdown after a timeout
+        const breakdownTimeout = setTimeout(() => {
             setBusData(prev => prev ? { ...prev, status: 'breakdown', speed: 0 } : null);
             if(simulationIntervalRef.current) clearInterval(simulationIntervalRef.current);
         }, 10000); // Breakdown after 10 seconds
 
+        // Cleanup timeout on unmount
+        return () => clearTimeout(breakdownTimeout);
       }
   }, [map]);
 
@@ -299,10 +299,29 @@ export default function TrackerPage({ busId }: { busId: string }) {
         </Card>
       </div>
       
+      {showArrivalAlert && (
+         <div className="absolute inset-0 bg-black/50 z-[1001] flex items-center justify-center">
+            <Card className="w-full max-w-md p-6 text-center bg-yellow-300 dark:bg-yellow-800 text-yellow-900 dark:text-yellow-100 shadow-2xl border-yellow-400 dark:border-yellow-700">
+                <CardHeader>
+                    <div className="w-24 h-24 rounded-full bg-background/50 mx-auto flex items-center justify-center mb-4">
+                        <PartyPopper className="w-12 h-12 text-current"/>
+                    </div>
+                    <CardTitle className="text-3xl font-bold">Bus Arrived!</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-lg">Bus {busId} has reached your location.</p>
+                     <Button onClick={() => setShowArrivalAlert(false)} className="mt-6 bg-yellow-500 hover:bg-yellow-600 text-white dark:bg-yellow-600 dark:hover:bg-yellow-700">
+                        Awesome!
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+      )}
+
       {(busData?.status === 'breakdown' || error) && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-md">
-            <Alert variant="destructive" className="shadow-2xl bg-accent text-accent-foreground border-accent">
-                <AlertTriangle className="h-4 w-4 !text-accent-foreground" />
+            <Alert variant="destructive" className="shadow-2xl">
+                <AlertTriangle className="h-4 w-4" />
                 <AlertTitle className="font-bold">{busData?.status === 'breakdown' ? 'Bus Breakdown!' : 'Alert'}</AlertTitle>
                 <AlertDescription>
                     {busData?.status === 'breakdown' ? 'The bus has broken down. Please check for updates. ETA is currently unavailable.' : error}
