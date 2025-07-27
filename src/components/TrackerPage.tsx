@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -49,6 +50,9 @@ export default function TrackerPage({ busId }: { busId: string }) {
   
   const routeIndexRef = useRef(0);
   const polylineRef = useRef<Polyline | null>(null);
+  const simulationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const breakdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
 
   const notificationSentRef = useRef(false);
   const { toast } = useToast();
@@ -57,36 +61,75 @@ export default function TrackerPage({ busId }: { busId: string }) {
     ssr: false,
     loading: () => <Skeleton className="h-full w-full" />,
    }), []);
+   
+   // Cleanup function
+   useEffect(() => {
+    return () => {
+      if (simulationIntervalRef.current) {
+        clearInterval(simulationIntervalRef.current);
+      }
+      if (breakdownTimeoutRef.current) {
+        clearTimeout(breakdownTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleRouteFound = useCallback((coordinates: LatLng[]) => {
       if (!map || typeof window.L === 'undefined') return;
       
       setRoute(coordinates);
       
-      // Remove old polyline if it exists
       if (polylineRef.current) {
-          map.removeLayer(polylineRef.current);
+        map.removeLayer(polylineRef.current);
       }
       
-      // Add new polyline
       const newPolyline = window.L.polyline(coordinates, { color: 'hsl(var(--primary))', weight: 6, opacity: 0.8 }).addTo(map);
       polylineRef.current = newPolyline;
 
-      // Fit map to route bounds
       const bounds = window.L.latLngBounds(coordinates);
       if (bounds.isValid()) {
         map.fitBounds(bounds, { padding: [50, 50] });
       }
       
-      // Set initial bus position at the start of the route
       if (coordinates.length > 0) {
         const startLocation = { lat: coordinates[0].lat, lng: coordinates[0].lng };
-        setBusData(prev => prev ? {...prev, location: startLocation, speed: 40} : {
+        routeIndexRef.current = 0; 
+
+        setBusData({
           location: startLocation,
           status: 'normal',
           speed: 40,
         });
-        routeIndexRef.current = 0; // Reset route index
+
+        // Clear any existing simulation before starting a new one
+        if (simulationIntervalRef.current) clearInterval(simulationIntervalRef.current);
+        if (breakdownTimeoutRef.current) clearTimeout(breakdownTimeoutRef.current);
+
+        // Start simulation
+        simulationIntervalRef.current = setInterval(() => {
+            setBusData(prevBusData => {
+              if (!prevBusData || prevBusData.status !== 'normal') {
+                  if(simulationIntervalRef.current) clearInterval(simulationIntervalRef.current);
+                  return prevBusData;
+              }
+      
+              if (routeIndexRef.current >= coordinates.length - 1) {
+                if(simulationIntervalRef.current) clearInterval(simulationIntervalRef.current);
+                return { ...prevBusData, speed: 0 };
+              }
+      
+              routeIndexRef.current += 1;
+              const newPos = coordinates[routeIndexRef.current];
+              return { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng } };
+            });
+        }, 2000);
+
+        // Schedule breakdown
+        breakdownTimeoutRef.current = setTimeout(() => {
+            setBusData(prev => prev ? { ...prev, status: 'breakdown', speed: 0 } : null);
+            if(simulationIntervalRef.current) clearInterval(simulationIntervalRef.current);
+        }, 10000); // Breakdown after 10 seconds
+
       }
   }, [map]);
 
@@ -152,34 +195,6 @@ export default function TrackerPage({ busId }: { busId: string }) {
         fetchAndSetRoute();
     }
   }, [userLocation, busData?.location, busId, handleRouteFound, toast, route.length, map]);
-
-   // Bus movement simulation effect
-   useEffect(() => {
-    if (busData?.status !== 'normal' || route.length === 0) {
-      return;
-    }
-
-    const intervalId = setInterval(() => {
-      setBusData(prevBusData => {
-        if (!prevBusData) return null;
-
-        // Check if bus has reached the end BEFORE moving
-        if (routeIndexRef.current >= route.length - 1) {
-          clearInterval(intervalId); // Stop simulation
-          return { ...prevBusData, speed: 0 }; // Keep bus at the end
-        }
-
-        // Move to the next point
-        routeIndexRef.current += 1;
-        const newPos = route[routeIndexRef.current];
-        return { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng } };
-      });
-    }, 2000); // Update every 2 seconds
-
-    return () => clearInterval(intervalId); // Cleanup on component unmount or when dependencies change
-
-  }, [busData?.status, route]);
-  
   
   useEffect(() => {
     if (userLocation && busData && route.length > 0 && typeof window !== 'undefined' && window.L) {
@@ -316,3 +331,5 @@ export default function TrackerPage({ busId }: { busId: string }) {
     </div>
   );
 }
+
+    
