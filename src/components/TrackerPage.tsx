@@ -325,7 +325,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
                         <p className="font-bold text-destructive">
                            {busData?.status === 'breakdown' ? 'Bus Breakdown!' : 'Alert'}
                         </p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-destructive">
                             {busData?.status === 'breakdown' ? 'The bus has broken down. Please check for updates. ETA is currently unavailable.' : error}
                         </p>
                     </div>
