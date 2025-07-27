@@ -81,7 +81,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
       // Set initial bus position at the start of the route
       if (coordinates.length > 0) {
         const startLocation = { lat: coordinates[0].lat, lng: coordinates[0].lng };
-        setBusData(prev => prev ? {...prev, location: startLocation} : {
+        setBusData(prev => prev ? {...prev, location: startLocation, speed: 40} : {
           location: startLocation,
           status: 'normal',
           speed: 40,
@@ -160,22 +160,25 @@ export default function TrackerPage({ busId }: { busId: string }) {
     }
 
     const intervalId = setInterval(() => {
-      routeIndexRef.current += 1;
-      
-      if (routeIndexRef.current >= route.length) {
-        // Bus has reached the end of the route
-        routeIndexRef.current = route.length - 1; 
-        clearInterval(intervalId); // Stop the simulation
-      }
-      
-      const newPos = route[routeIndexRef.current];
-      setBusData(prevBusData => prevBusData ? { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng } } : null);
+      setBusData(prevBusData => {
+        if (!prevBusData) return null;
 
+        // Check if bus has reached the end BEFORE moving
+        if (routeIndexRef.current >= route.length - 1) {
+          clearInterval(intervalId); // Stop simulation
+          return { ...prevBusData, speed: 0 }; // Keep bus at the end
+        }
+
+        // Move to the next point
+        routeIndexRef.current += 1;
+        const newPos = route[routeIndexRef.current];
+        return { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng } };
+      });
     }, 2000); // Update every 2 seconds
 
     return () => clearInterval(intervalId); // Cleanup on component unmount or when dependencies change
 
-  }, [route, busData?.status]);
+  }, [busData?.status, route]);
   
   
   useEffect(() => {
@@ -218,8 +221,8 @@ export default function TrackerPage({ busId }: { busId: string }) {
   const renderETA = () => {
     if (busData?.status === 'breakdown') return <span className="text-destructive font-bold">Not Available</span>;
     if (eta === null) return <span>Calculating...</span>;
+    if (busData?.speed === 0 && routeIndexRef.current >= route.length -1) return <span className="text-green-600 font-bold">Arrived</span>;
     if (eta === Infinity) return <span>Bus is not moving</span>;
-    if (route.length > 0 && routeIndexRef.current >= route.length -1) return <span className="text-green-600 font-bold">Arrived</span>;
     if (eta < 1/60) return <span className="text-green-600 font-bold">Arriving now</span>;
     const minutes = Math.floor(eta);
     const seconds = Math.floor((eta * 60) % 60);
