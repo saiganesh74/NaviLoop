@@ -45,7 +45,6 @@ export default function TrackerPage({ busId }: { busId: string }) {
   const [eta, setEta] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [route, setRoute] = useState<LatLng[]>([]);
-  const [routeTrace, setRouteTrace] = useState<LatLng[]>([]);
   const [map, setMap] = useState<LeafletMap | null>(null);
   
   const routeIndexRef = useRef(0);
@@ -69,7 +68,6 @@ export default function TrackerPage({ busId }: { busId: string }) {
           status: 'normal',
           speed: 40,
         });
-        setRouteTrace([coordinates[0]]);
       }
       routeIndexRef.current = 0; 
   }, []);
@@ -152,8 +150,6 @@ export default function TrackerPage({ busId }: { busId: string }) {
       routeIndexRef.current = nextIndex;
       
       setBusData(prevBusData => prevBusData ? { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng } } : null);
-      setRouteTrace(prevTrace => [...prevTrace, newPos]);
-
   }, [route]);
 
   useEffect(() => {
@@ -173,14 +169,12 @@ export default function TrackerPage({ busId }: { busId: string }) {
   
   
   useEffect(() => {
-    if (!map || typeof window === 'undefined' || !window.L) return;
+    if (!map || typeof window === 'undefined' || !window.L || route.length === 0) return;
 
     if (!polylineRef.current) {
-        polylineRef.current = window.L.polyline(routeTrace, { color: 'hsl(var(--primary))', weight: 6, opacity: 0.8 }).addTo(map);
-    } else {
-        polylineRef.current.setLatLngs(routeTrace);
+        polylineRef.current = window.L.polyline(route, { color: 'hsl(var(--primary))', weight: 6, opacity: 0.8 }).addTo(map);
     }
-  }, [map, routeTrace]);
+  }, [map, route]);
 
 
   useEffect(() => {
