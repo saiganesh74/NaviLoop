@@ -93,6 +93,6 @@ See LICENSE for more info.
 ---
 
 ## Author @Team
-- Sai Ganesh Rejeti - Team Lead & Dev
-- Lakkavathri Abhinay - Dev
-- Sherikari Archana - Dev 
+- [Sai Ganesh Rejeti](https://github.com/saiganesh74) - Team Lead & Dev
+- [Lakkavathri Abhinay](https://github.com/Abhinay2340) - Dev
+- [Sherikari Archana](https://github.com/archanareddy177) - Dev 
