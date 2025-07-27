@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import TrackerPage from '@/components/TrackerPage';
 import { Skeleton } from '@/components/ui/skeleton';
 import LoginPage from './login/page';
+import { useSearchParams } from 'next/navigation';
 
-export default function Home() {
+function SearchHandler() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -34,7 +35,7 @@ export default function Home() {
   }
 
   if (!busId) {
-     return (
+    return (
       <div className="h-screen w-screen flex items-center justify-center bg-background">
         <div className="w-full h-full">
           <Skeleton className="h-full w-full" />
@@ -44,4 +45,16 @@ export default function Home() {
   }
 
   return <TrackerPage busId={busId} />;
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="h-screen w-screen flex items-center justify-center bg-background">
+        <Skeleton className="h-full w-full" />
+      </div>
+    }>
+      <SearchHandler />
+    </Suspense>
+  );
 }
