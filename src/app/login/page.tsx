@@ -103,7 +103,7 @@ export default function LoginPage() {
             <div className="flex justify-center items-center mb-4">
                 <BusIcon className="h-10 w-10 text-primary" />
             </div>
-          <CardTitle className="text-2xl font-headline">NaviLoop Tracker</CardTitle>
+          <CardTitle className="text-2xl font-headline">NaviLoop</CardTitle>
           <CardDescription>
             Sign in to track your bus in real-time
           </CardDescription>
@@ -115,7 +115,7 @@ export default function LoginPage() {
                     <Input 
                         id="email" 
                         type="email" 
-                        placeholder="m@example.com" 
+                        placeholder="abcd@example.com" 
                         required 
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
