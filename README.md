@@ -74,8 +74,9 @@ npm run dev
 ---
 
 ## Screeenshots
-![alt text](./configs/image.png) ![alt text](./configs/image-1.png) ![alt text](./configs/image-2.png)
-
+<img width="1915" height="934" alt="image" src="https://github.com/user-attachments/assets/a5114d50-d9c0-4f64-ad24-2faf794e1368" />
+<img width="1915" height="934" alt="image" src="https://github.com/user-attachments/assets/da6beb33-2c70-4abb-b16e-a7ddddd66f21" />
+<img width="1915" height="934" alt="image" src="https://github.com/user-attachments/assets/374f38bf-38b0-4ead-bd17-40fa559bd9f3" />
 
 ---
 
@@ -89,3 +90,9 @@ Contributions are welcome! Please open issues or submit pull requests for improv
 This project is licensed under the [MIT License](LICENSE).
 See LICENSE for more info.
 
+---
+
+## Author @Team
+- Sai Ganesh Rejeti - Team Lead & Dev
+- Lakkavathri Abhinay - Dev
+- Sherikari Archana - Dev 
