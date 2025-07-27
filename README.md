@@ -62,11 +62,11 @@ npm run dev
 ---
 
 ## To Do
- - [ ] Add user login to save preferred bus routes
+ - [x] Add user login to save preferred bus routes
 
- - [ ] Display estimated arrival time (ETA)
+ - [x] Display estimated arrival time (ETA)
 
- - [ ] Add multiple buses and route options
+ - [x] Add multiple buses and route options
 
  - [ ] Progressive Web App (PWA) support
 
