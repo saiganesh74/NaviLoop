@@ -48,9 +48,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
   const [map, setMap] = useState<LeafletMap | null>(null);
   
   const routeIndexRef = useRef(0);
-  const simulationIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const polylineRef = useRef<Polyline | null>(null);
-  const routeRef = useRef<LatLng[]>([]);
 
   const notificationSentRef = useRef(false);
   const { toast } = useToast();
@@ -61,8 +59,26 @@ export default function TrackerPage({ busId }: { busId: string }) {
    }), []);
 
   const handleRouteFound = useCallback((coordinates: LatLng[]) => {
+      if (!map || typeof window.L === 'undefined') return;
+      
       setRoute(coordinates);
-      routeRef.current = coordinates; // Keep a ref to the route for the interval
+      
+      // Remove old polyline if it exists
+      if (polylineRef.current) {
+          map.removeLayer(polylineRef.current);
+      }
+      
+      // Add new polyline
+      const newPolyline = window.L.polyline(coordinates, { color: 'hsl(var(--primary))', weight: 6, opacity: 0.8 }).addTo(map);
+      polylineRef.current = newPolyline;
+
+      // Fit map to route bounds
+      const bounds = window.L.latLngBounds(coordinates);
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [50, 50] });
+      }
+      
+      // Set initial bus position at the start of the route
       if (coordinates.length > 0) {
         const startLocation = { lat: coordinates[0].lat, lng: coordinates[0].lng };
         setBusData(prev => prev ? {...prev, location: startLocation} : {
@@ -70,9 +86,9 @@ export default function TrackerPage({ busId }: { busId: string }) {
           status: 'normal',
           speed: 40,
         });
+        routeIndexRef.current = 0; // Reset route index
       }
-      routeIndexRef.current = 0; 
-  }, []);
+  }, [map]);
 
   useEffect(() => {
     // Geolocation logic
@@ -131,58 +147,37 @@ export default function TrackerPage({ busId }: { busId: string }) {
         }
     };
     
-    if (userLocation && busData?.location && route.length === 0) {
+    // Fetch route only if we have locations but no route yet.
+    if (userLocation && busData?.location && route.length === 0 && map) {
         fetchAndSetRoute();
     }
-  }, [userLocation, busData?.location, busId, handleRouteFound, toast, route.length]);
+  }, [userLocation, busData?.location, busId, handleRouteFound, toast, route.length, map]);
 
-  const moveBus = useCallback(() => {
-      const currentRoute = routeRef.current;
-      if (!currentRoute || currentRoute.length === 0) return;
+   // Bus movement simulation effect
+   useEffect(() => {
+    if (busData?.status !== 'normal' || route.length === 0) {
+      return;
+    }
 
-      const currentIndex = routeIndexRef.current;
-      if (currentIndex >= currentRoute.length - 1) {
-        if (simulationIntervalRef.current) {
-          clearInterval(simulationIntervalRef.current);
-        }
-        return;
-      }
-
-      const nextIndex = currentIndex + 1;
-      const newPos = currentRoute[nextIndex];
-      routeIndexRef.current = nextIndex;
+    const intervalId = setInterval(() => {
+      routeIndexRef.current += 1;
       
+      if (routeIndexRef.current >= route.length) {
+        // Bus has reached the end of the route
+        routeIndexRef.current = route.length - 1; 
+        clearInterval(intervalId); // Stop the simulation
+      }
+      
+      const newPos = route[routeIndexRef.current];
       setBusData(prevBusData => prevBusData ? { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng } } : null);
-  }, []);
 
-  useEffect(() => {
-    if (route.length > 0 && busData?.status === 'normal') {
-      if (simulationIntervalRef.current) {
-        clearInterval(simulationIntervalRef.current);
-      }
-      simulationIntervalRef.current = setInterval(moveBus, 2000); 
-    }
-    
-    return () => {
-      if (simulationIntervalRef.current) {
-        clearInterval(simulationIntervalRef.current);
-      }
-    };
-  }, [route, busData?.status, moveBus]);
+    }, 2000); // Update every 2 seconds
+
+    return () => clearInterval(intervalId); // Cleanup on component unmount or when dependencies change
+
+  }, [route, busData?.status]);
   
   
-  useEffect(() => {
-    if (!map || typeof window === 'undefined' || !window.L || route.length === 0) return;
-  
-    if (polylineRef.current) {
-      map.removeLayer(polylineRef.current);
-    }
-    
-    polylineRef.current = window.L.polyline(route, { color: 'hsl(var(--primary))', weight: 6, opacity: 0.8 }).addTo(map);
-
-  }, [map, route]);
-
-
   useEffect(() => {
     if (userLocation && busData && route.length > 0 && typeof window !== 'undefined' && window.L) {
       if (busData.status === 'breakdown') {
