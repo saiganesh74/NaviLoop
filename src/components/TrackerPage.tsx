@@ -299,8 +299,8 @@ export default function TrackerPage({ busId }: { busId: string }) {
       </div>
       
       {showArrivalAlert && (
-         <div className="absolute inset-0 bg-background/95 backdrop-blur-sm z-[1001] flex items-center justify-center">
-            <Card className="w-full max-w-md p-6 text-center shadow-2xl border">
+         <div className="absolute inset-0 bg-black/80 z-[1001] flex items-center justify-center">
+            <Card className="w-full max-w-md p-6 text-center shadow-2xl border bg-card">
                 <CardHeader>
                     <div className="w-24 h-24 rounded-full bg-primary/10 mx-auto flex items-center justify-center mb-4 border">
                         <PartyPopper className="w-12 h-12 text-primary"/>
