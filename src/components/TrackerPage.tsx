@@ -300,17 +300,17 @@ export default function TrackerPage({ busId }: { busId: string }) {
       </div>
       
       {showArrivalAlert && (
-         <div className="absolute inset-0 bg-black/50 z-[1001] flex items-center justify-center">
-            <Card className="w-full max-w-md p-6 text-center bg-yellow-300 dark:bg-yellow-800 text-yellow-900 dark:text-yellow-100 shadow-2xl border-yellow-400 dark:border-yellow-700">
+         <div className="absolute inset-0 bg-background/95 backdrop-blur-sm z-[1001] flex items-center justify-center">
+            <Card className="w-full max-w-md p-6 text-center shadow-2xl border">
                 <CardHeader>
-                    <div className="w-24 h-24 rounded-full bg-background/50 mx-auto flex items-center justify-center mb-4">
-                        <PartyPopper className="w-12 h-12 text-current"/>
+                    <div className="w-24 h-24 rounded-full bg-primary/10 mx-auto flex items-center justify-center mb-4 border">
+                        <PartyPopper className="w-12 h-12 text-primary"/>
                     </div>
                     <CardTitle className="text-3xl font-bold">Bus Arrived!</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-lg">Bus {busId} has reached your location.</p>
-                     <Button onClick={() => setShowArrivalAlert(false)} className="mt-6 bg-yellow-500 hover:bg-yellow-600 text-white dark:bg-yellow-600 dark:hover:bg-yellow-700">
+                    <p className="text-lg text-muted-foreground">Bus {busId} has reached your location.</p>
+                     <Button onClick={() => setShowArrivalAlert(false)} className="mt-6">
                         Awesome!
                     </Button>
                 </CardContent>
@@ -350,5 +350,3 @@ export default function TrackerPage({ busId }: { busId: string }) {
     </div>
   );
 }
-
-    
