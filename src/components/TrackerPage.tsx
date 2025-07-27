@@ -50,6 +50,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
   const routeIndexRef = useRef(0);
   const simulationIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const polylineRef = useRef<Polyline | null>(null);
+  const routeRef = useRef<LatLng[]>([]);
 
   const notificationSentRef = useRef(false);
   const { toast } = useToast();
@@ -61,6 +62,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
 
   const handleRouteFound = useCallback((coordinates: LatLng[]) => {
       setRoute(coordinates);
+      routeRef.current = coordinates; // Keep a ref to the route for the interval
       if (coordinates.length > 0) {
         const startLocation = { lat: coordinates[0].lat, lng: coordinates[0].lng };
         setBusData(prev => prev ? {...prev, location: startLocation} : {
@@ -135,10 +137,11 @@ export default function TrackerPage({ busId }: { busId: string }) {
   }, [userLocation, busData?.location, busId, handleRouteFound, toast, route.length]);
 
   const moveBus = useCallback(() => {
-      if (!route || route.length === 0) return;
+      const currentRoute = routeRef.current;
+      if (!currentRoute || currentRoute.length === 0) return;
 
       const currentIndex = routeIndexRef.current;
-      if (currentIndex >= route.length - 1) {
+      if (currentIndex >= currentRoute.length - 1) {
         if (simulationIntervalRef.current) {
           clearInterval(simulationIntervalRef.current);
         }
@@ -146,11 +149,11 @@ export default function TrackerPage({ busId }: { busId: string }) {
       }
 
       const nextIndex = currentIndex + 1;
-      const newPos = route[nextIndex];
+      const newPos = currentRoute[nextIndex];
       routeIndexRef.current = nextIndex;
       
       setBusData(prevBusData => prevBusData ? { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng } } : null);
-  }, [route]);
+  }, []);
 
   useEffect(() => {
     if (route.length > 0 && busData?.status === 'normal') {
@@ -170,10 +173,13 @@ export default function TrackerPage({ busId }: { busId: string }) {
   
   useEffect(() => {
     if (!map || typeof window === 'undefined' || !window.L || route.length === 0) return;
-
-    if (!polylineRef.current) {
-        polylineRef.current = window.L.polyline(route, { color: 'hsl(var(--primary))', weight: 6, opacity: 0.8 }).addTo(map);
+  
+    if (polylineRef.current) {
+      map.removeLayer(polylineRef.current);
     }
+    
+    polylineRef.current = window.L.polyline(route, { color: 'hsl(var(--primary))', weight: 6, opacity: 0.8 }).addTo(map);
+
   }, [map, route]);
 
 
