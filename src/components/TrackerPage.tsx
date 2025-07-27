@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Bus, Clock, LogOut, TrafficCone, AlertTriangle, User as UserIcon, PartyPopper } from 'lucide-react';
@@ -319,13 +318,19 @@ export default function TrackerPage({ busId }: { busId: string }) {
 
       {(busData?.status === 'breakdown' || error) && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-md">
-            <Alert variant="destructive" className="shadow-2xl">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle className="font-bold">{busData?.status === 'breakdown' ? 'Bus Breakdown!' : 'Alert'}</AlertTitle>
-                <AlertDescription>
-                    {busData?.status === 'breakdown' ? 'The bus has broken down. Please check for updates. ETA is currently unavailable.' : error}
-                </AlertDescription>
-            </Alert>
+            <Card className="shadow-2xl">
+                <CardContent className="p-4 flex items-center gap-4">
+                    <AlertTriangle className="h-6 w-6 text-destructive flex-shrink-0" />
+                    <div>
+                        <p className="font-bold text-destructive">
+                           {busData?.status === 'breakdown' ? 'Bus Breakdown!' : 'Alert'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                            {busData?.status === 'breakdown' ? 'The bus has broken down. Please check for updates. ETA is currently unavailable.' : error}
+                        </p>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
       )}
 
