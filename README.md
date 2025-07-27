@@ -41,7 +41,6 @@ cd NaviLoop
 
 ```
 npm install
-
 ``` 
 
 ### 3. Configure Firebase 
