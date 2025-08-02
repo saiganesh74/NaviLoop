@@ -69,6 +69,10 @@ npm run dev
  - [x] Add multiple buses and route options
 
  - [ ] Progressive Web App (PWA) support
+ 
+ - [ ] Integrate with real time data from NEO 6M
+ 
+ - [ ] Generate alerts for the user  
 
 
 ---
