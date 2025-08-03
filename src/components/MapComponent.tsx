@@ -125,7 +125,7 @@ const MapComponent = ({ userLocation, busLocation, onMapReady, routeCoordinates 
             <div className="text-center text-white p-4 bg-black/70 rounded-lg">
                 <h3 className="font-bold text-lg mb-2">Map Unavailable</h3>
                 <p className="text-sm">Please add an OpenRouteService API key to enable the interactive map.</p>
-                <a href="https://openrouteservice.org/dashboard" target="_blank" rel="noopener noreferrer" className="text-primary underline mt-2 inline-block">Get a free API Key</a>
+                <a href="https://openrouteservice.org/dashboard/" target="_blank" rel="noopener noreferrer" className="text-primary underline mt-2 inline-block">Get a free API Key</a>
             </div>
         </div>
       </div>
