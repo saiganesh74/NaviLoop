@@ -111,7 +111,7 @@ const MapComponent = ({ userLocation, busLocation, onMapReady, routeCoordinates 
 
   const apiKey = process.env.NEXT_PUBLIC_OPENROUTESERVICE_API_KEY;
 
-  if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
+  if (!apiKey) {
     return (
       <div className="w-full h-full relative bg-muted flex items-center justify-center">
         <Image 
