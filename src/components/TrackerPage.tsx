@@ -74,8 +74,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
   const startSimulation = useCallback((coordinates: LatLng[]) => {
       if (coordinates.length > 0) {
         routeIndexRef.current = 0;
-        notificationSentRef.current = { user: false, college: false };
-
+        
         const startLocation = { lat: coordinates[0].lat, lng: coordinates[0].lng };
         
         setBusData({
@@ -102,6 +101,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
                   
                   if(journeyStage === 'toUser') {
                     // Arrived at user, now route to college
+                    toast({ title: `Bus ${busId} has arrived at your location!` });
                     setJourneyStage('toCollege');
                   } else {
                     // Arrived at college
@@ -166,23 +166,22 @@ export default function TrackerPage({ busId }: { busId: string }) {
 
   // Effect to handle journey stages
   useEffect(() => {
-    if (!busData?.location || !userLocation || !map) return;
+    if (!userLocation || !map) return;
   
-    if (journeyStage === 'toUser' && busData.location) {
+    if (journeyStage === 'toUser' && route.length === 0) {
       // Start of journey, from bus start to user
       const seed = parseInt(busId, 10) / 1000;
       const busStartLocation: Location = {
           lat: MOCK_BUS_START_LOCATION.lat + seed,
           lng: MOCK_BUS_START_LOCATION.lng + seed,
       };
-      if (route.length === 0) { // Fetch only if route is not set
-        fetchAndSetRoute(busStartLocation, userLocation);
-      }
-    } else if (journeyStage === 'toCollege' && busData.location) {
+      fetchAndSetRoute(busStartLocation, userLocation);
+      
+    } else if (journeyStage === 'toCollege' && busData?.location) {
         // Bus reached user, now go to college
         fetchAndSetRoute(busData.location, COLLEGE_LOCATION);
     }
-  }, [journeyStage, busData?.location, userLocation, map, busId, fetchAndSetRoute, route.length]);
+  }, [journeyStage, userLocation, map, busId, fetchAndSetRoute, route, busData?.location]);
 
   
   useEffect(() => {
@@ -228,6 +227,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
 
   const handleRestartJourney = () => {
     toast({ title: 'New Journey Started', description: `Bus ${busId} has left the college.` });
+    notificationSentRef.current = { user: false, college: false };
     setJourneyStage('toUser');
     setRoute([]); // Clear route to trigger refetch
     setBusData(null); // Reset bus data
