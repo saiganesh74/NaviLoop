@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Bus, Clock, LogOut, TrafficCone, AlertTriangle, User as UserIcon, PartyPopper, School } from 'lucide-react';
+import { Bus, Clock, LogOut, TrafficCone, AlertTriangle, User as UserIcon, School } from 'lucide-react';
 import { calculateETA } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
 import dynamic from 'next/dynamic';
@@ -50,6 +50,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
   const [map, setMap] = useState<LeafletMap | null>(null);
   const [showArrivalAlert, setShowArrivalAlert] = useState(false);
   const [journeyStage, setJourneyStage] = useState<'toUser' | 'toCollege'>('toUser');
+  const [arrivalStatus, setArrivalStatus] = useState<'user' | 'college' | null>(null);
   
   const routeIndexRef = useRef(0);
   const simulationIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -100,17 +101,12 @@ export default function TrackerPage({ busId }: { busId: string }) {
                   if(simulationIntervalRef.current) clearInterval(simulationIntervalRef.current);
                   
                   if(journeyStage === 'toUser') {
-                    // Arrived at user, now route to college
-                    toast({ title: `Bus ${busId} has arrived at your location!` });
-                    setJourneyStage('toCollege');
+                    setArrivalStatus('user');
                   } else {
-                    // Arrived at college
-                    toast({ title: `Bus ${busId} has arrived at the college.` });
-                    setBusData(prev => prev ? { ...prev, status: 'finished', speed: 0 } : null);
+                    setArrivalStatus('college');
                   }
 
-                  setShowArrivalAlert(true);
-                  return { ...prevBusData, speed: 0 };
+                  return { ...prevBusData, speed: 0, status: journeyStage === 'toCollege' ? 'finished' : 'enroute' };
               }
       
               routeIndexRef.current += 1;
@@ -119,7 +115,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
             });
         }, 1000); // Move to next coordinate every 1 second
       }
-  }, [map, toast, busId, journeyStage]);
+  }, [journeyStage]);
 
   // Fetch route and start simulation
   const fetchAndSetRoute = useCallback(async (start: Location, end: Location) => {
@@ -127,7 +123,9 @@ export default function TrackerPage({ busId }: { busId: string }) {
       const routeData = await getRoute({ start, end });
       const leafletRoute = routeData.coordinates.map(c => ({ lat: c.lat, lng: c.lng } as LatLng));
       setRoute(leafletRoute);
-      startSimulation(leafletRoute);
+      if (leafletRoute.length > 0) {
+        startSimulation(leafletRoute);
+      }
     } catch (e: any) {
       console.error("Failed to fetch route via flow", e);
       setError(e.message || "Could not calculate the bus route.");
@@ -168,32 +166,44 @@ export default function TrackerPage({ busId }: { busId: string }) {
   useEffect(() => {
     if (!userLocation || !map) return;
   
+    // Only fetch route if it's not already set for the current stage
     if (journeyStage === 'toUser' && route.length === 0) {
-      // Start of journey, from bus start to user
       const seed = parseInt(busId, 10) / 1000;
       const busStartLocation: Location = {
           lat: MOCK_BUS_START_LOCATION.lat + seed,
           lng: MOCK_BUS_START_LOCATION.lng + seed,
       };
       fetchAndSetRoute(busStartLocation, userLocation);
-      
-    } else if (journeyStage === 'toCollege' && busData?.location) {
-        // Bus reached user, now go to college
+    } else if (journeyStage === 'toCollege' && busData?.location && route.length === 0) {
         fetchAndSetRoute(busData.location, COLLEGE_LOCATION);
     }
-  }, [journeyStage, userLocation, map, busId, fetchAndSetRoute]);
+  }, [journeyStage, userLocation, map, busId, fetchAndSetRoute, busData?.location, route.length]);
+
+  // Effect to handle arrival events
+  useEffect(() => {
+    if (arrivalStatus === 'user') {
+      toast({ title: `Bus ${busId} has arrived at your location!` });
+      setShowArrivalAlert(true);
+      setJourneyStage('toCollege');
+      setRoute([]); // Clear route to trigger next stage
+      setArrivalStatus(null); // Reset status
+    } else if (arrivalStatus === 'college') {
+      toast({ title: `Bus ${busId} has arrived at the college.` });
+      setShowArrivalAlert(true);
+      setBusData(prev => prev ? { ...prev, status: 'finished' } : null);
+      setArrivalStatus(null); // Reset status
+    }
+  }, [arrivalStatus, toast, busId]);
 
   
   useEffect(() => {
     if (userLocation && busData && route.length > 0 && typeof window !== 'undefined' && window.L) {
       let remainingDistance = 0;
       if (routeIndexRef.current < route.length - 1) {
-        // Calculate distance from current bus position to the next point on the route
         const currentPos = window.L.latLng(busData.location.lat, busData.location.lng);
         const nextPoint = window.L.latLng(route[routeIndexRef.current + 1]);
         remainingDistance += currentPos.distanceTo(nextPoint);
 
-        // Add distances for the rest of the route segments
         for (let i = routeIndexRef.current + 1; i < route.length - 1; i++) {
             remainingDistance += window.L.latLng(route[i]).distanceTo(window.L.latLng(route[i+1]));
         }
@@ -228,15 +238,16 @@ export default function TrackerPage({ busId }: { busId: string }) {
   const handleRestartJourney = () => {
     toast({ title: 'New Journey Started', description: `Bus ${busId} has left the college.` });
     notificationSentRef.current = { user: false, college: false };
+    setShowArrivalAlert(false);
     setJourneyStage('toUser');
-    setRoute([]); // Clear route to trigger refetch
-    setBusData(null); // Reset bus data
+    setRoute([]);
+    setBusData(null);
   }
 
   const renderETA = () => {
     if (busData?.status === 'finished') return <span className="text-green-600 font-bold">Arrived at College</span>;
     if (eta === null) return <span>Calculating...</span>;
-    if (busData?.speed === 0) return <span className="text-green-600 font-bold">Arrived at {journeyStage === 'toUser' ? 'You' : 'College'}</span>;
+    if (busData?.speed === 0 && journeyStage === 'toUser') return <span className="text-green-600 font-bold">Arrived at You</span>;
     if (eta < 1/60) return <span className="text-green-600 font-bold">Arriving now</span>;
     const minutes = Math.floor(eta);
     const seconds = Math.floor((eta * 60) % 60);
@@ -303,24 +314,25 @@ export default function TrackerPage({ busId }: { busId: string }) {
             <Card className="w-full max-w-md p-6 text-center shadow-2xl border bg-card">
                 <CardHeader>
                     <div className="w-24 h-24 rounded-full bg-primary/10 mx-auto flex items-center justify-center mb-4 border">
-                        {journeyStage === 'toCollege' ? <UserIcon className="w-12 h-12 text-primary" /> : <School className="w-12 h-12 text-primary" />}
+                        {busData?.status === 'finished' ? <School className="w-12 h-12 text-primary" /> : <UserIcon className="w-12 h-12 text-primary" />}
                     </div>
                     <CardTitle className="text-3xl font-bold text-card-foreground">
-                        {journeyStage === 'toCollege' ? 'Bus Arrived at Your Stop!' : 'Bus Arrived at College!'}
+                        {busData?.status === 'finished' ? 'Bus Arrived at College!' : 'Bus Arrived at Your Stop!'}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="text-lg text-muted-foreground">
-                        {journeyStage === 'toCollege' 
-                            ? `Bus ${busId} has reached your location. Next stop: College.`
-                            : `Bus ${busId} has reached its final destination.`
+                        {busData?.status === 'finished'
+                            ? `Bus ${busId} has reached its final destination.`
+                            : `Bus ${busId} has reached your location. Next stop: College.`
                         }
                     </p>
                      <Button 
                         onClick={() => {
-                            setShowArrivalAlert(false);
                             if (busData?.status === 'finished') {
                                 handleRestartJourney();
+                            } else {
+                                setShowArrivalAlert(false);
                             }
                         }}
                         className="mt-6"
