@@ -1,6 +1,5 @@
 /**
  * NaviLoop - Real-Time GPS Tracker for Firebase
- * 
  * This sketch is designed for an ESP8266 or ESP32 microcontroller to read GPS data
  * from a NEO-6M module and upload it to a Firebase Realtime Database.
  * 
