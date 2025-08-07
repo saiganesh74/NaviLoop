@@ -37,7 +37,7 @@ const customUserIcon = new Icon({
 });
 
 const customCollegeIcon = new Icon({
-  iconUrl: '/college-pin.svg',
+  iconUrl: 'https://cdn-icons-png.flaticon.com/512/2641/2641334.png',
   iconSize: [50, 50],
   iconAnchor: [25, 50],
 });
