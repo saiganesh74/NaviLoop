@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "simulate": "tsx src/lib/simulateBus.ts"
   },
+  
   "dependencies": {
     "@genkit-ai/firebase": "^1.15.5",
     "@genkit-ai/googleai": "^1.15.5",
