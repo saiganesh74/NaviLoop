@@ -117,7 +117,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
               const newPos = coordinates[routeIndexRef.current];
               return { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng } };
             });
-        }, 2000); // Move to next coordinate every 2 seconds
+        }, 1000); // Move to next coordinate every 1 second
       }
   }, [map, toast, busId, journeyStage]);
 
@@ -181,7 +181,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
         // Bus reached user, now go to college
         fetchAndSetRoute(busData.location, COLLEGE_LOCATION);
     }
-  }, [journeyStage, userLocation, map, busId, fetchAndSetRoute, route, busData?.location]);
+  }, [journeyStage, userLocation, map, busId, fetchAndSetRoute]);
 
   
   useEffect(() => {
