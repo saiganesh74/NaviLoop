@@ -119,13 +119,13 @@ export default function TrackerPage({ busId }: { busId: string }) {
               const newPos = coordinates[routeIndexRef.current];
               return { ...prevBusData, location: { lat: newPos.lat, lng: newPos.lng } };
             });
-        }, 2000);
+        }, 2000); // Move to next coordinate every 2 seconds
 
-        // Schedule breakdown after a timeout
+        // Schedule breakdown after a timeout for demonstration
         const breakdownTimeout = setTimeout(() => {
             setBusData(prev => prev ? { ...prev, status: 'breakdown', speed: 0 } : null);
             if(simulationIntervalRef.current) clearInterval(simulationIntervalRef.current);
-        }, 10000); // Breakdown after 10 seconds
+        }, 30000); // Breakdown after 30 seconds
 
         // Cleanup timeout on unmount
         return () => clearTimeout(breakdownTimeout);
@@ -204,7 +204,13 @@ export default function TrackerPage({ busId }: { busId: string }) {
       
       let remainingDistance = 0;
       if (routeIndexRef.current < route.length - 1) {
-        for (let i = routeIndexRef.current; i < route.length - 1; i++) {
+        // Calculate distance from current bus position to the next point on the route
+        const currentPos = window.L.latLng(busData.location.lat, busData.location.lng);
+        const nextPoint = window.L.latLng(route[routeIndexRef.current + 1]);
+        remainingDistance += currentPos.distanceTo(nextPoint);
+
+        // Add distances for the rest of the route segments
+        for (let i = routeIndexRef.current + 1; i < route.length - 1; i++) {
             remainingDistance += window.L.latLng(route[i]).distanceTo(window.L.latLng(route[i+1]));
         }
       }
