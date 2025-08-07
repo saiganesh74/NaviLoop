@@ -1,9 +1,8 @@
 'use client';
 
 import 'leaflet/dist/leaflet.css';
-import { Icon, Map as LeafletMap, map as createMap, tileLayer, marker, LatLng, latLngBounds } from 'leaflet';
-import React, { useEffect, useState, useRef } from 'react';
-import Image from 'next/image';
+import { Icon, Map as LeafletMap, map as createMap, tileLayer, marker, LatLng, latLngBounds, polyline } from 'leaflet';
+import React, { useEffect, useRef } from 'react';
 import { useTheme } from 'next-themes';
 
 declare global {
@@ -20,6 +19,7 @@ interface Location {
 interface MapComponentProps {
   userLocation: Location | null;
   busLocation: Location | undefined | null;
+  collegeLocation: Location | null;
   onMapReady: (map: LeafletMap) => void;
   routeCoordinates: LatLng[];
 }
@@ -31,15 +31,24 @@ const customBusIcon = new Icon({
 });
 
 const customUserIcon = new Icon({
-    iconUrl: '/user-pin.svg',
-    iconSize: [50, 50],
-    iconAnchor: [25, 50],
-  });
+  iconUrl: '/user-pin.svg',
+  iconSize: [50, 50],
+  iconAnchor: [25, 50],
+});
 
-const MapComponent = ({ userLocation, busLocation, onMapReady, routeCoordinates }: MapComponentProps) => {
+const customCollegeIcon = new Icon({
+  iconUrl: '/college-pin.svg',
+  iconSize: [50, 50],
+  iconAnchor: [25, 50],
+});
+
+
+const MapComponent = ({ userLocation, busLocation, collegeLocation, onMapReady, routeCoordinates }: MapComponentProps) => {
   const mapRef = useRef<LeafletMap | null>(null);
   const userMarkerRef = useRef<L.Marker | null>(null);
   const busMarkerRef = useRef<L.Marker | null>(null);
+  const collegeMarkerRef = useRef<L.Marker | null>(null);
+  const routePolylineRef = useRef<L.Polyline | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const { theme } = useTheme();
 
@@ -47,18 +56,22 @@ const MapComponent = ({ userLocation, busLocation, onMapReady, routeCoordinates 
   const darkTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
   
   useEffect(() => {
-    if (mapRef.current === null && typeof window !== 'undefined') {
-      window.L = require('leaflet');
-      const mapElement = document.getElementById('map');
-      if (mapElement && !(mapElement as any)._leaflet_id) {
-        const initialCenter = userLocation || { lat: 17.3850, lng: 78.4867 };
-        const leafletMap = createMap('map').setView([initialCenter.lat, initialCenter.lng], 13);
-        mapRef.current = leafletMap;
-        onMapReady(leafletMap);
-      }
+    if (typeof window !== 'undefined') {
+        const L = require('leaflet');
+         // Check if the map is already initialized
+        if (mapRef.current === null) {
+            const mapElement = document.getElementById('map');
+            if (mapElement && !(mapElement as any)._leaflet_id) {
+                const initialCenter = userLocation || { lat: 17.3850, lng: 78.4867 };
+                const leafletMap = createMap('map').setView([initialCenter.lat, initialCenter.lng], 13);
+                mapRef.current = leafletMap;
+                onMapReady(leafletMap);
+            }
+        }
     }
   }, [userLocation, onMapReady]);
 
+  // Update tile layer based on theme
   useEffect(() => {
     if (!mapRef.current) return;
   
@@ -75,7 +88,7 @@ const MapComponent = ({ userLocation, busLocation, onMapReady, routeCoordinates 
   
   }, [theme, mapRef.current]);
 
-
+  // Update user marker
   useEffect(() => {
     if (mapRef.current && userLocation) {
       if (!userMarkerRef.current) {
@@ -86,41 +99,57 @@ const MapComponent = ({ userLocation, busLocation, onMapReady, routeCoordinates 
     }
   }, [userLocation, mapRef.current]);
 
-
-  // Add/Update markers
+  // Update bus marker
   useEffect(() => {
-    if (mapRef.current) {
-      if (busLocation) {
-        if (!busMarkerRef.current) {
-          busMarkerRef.current = marker([busLocation.lat, busLocation.lng], { icon: customBusIcon }).addTo(mapRef.current);
-        } else {
-          busMarkerRef.current.setLatLng([busLocation.lat, busLocation.lng]);
-        }
+    if (mapRef.current && busLocation) {
+      if (!busMarkerRef.current) {
+        busMarkerRef.current = marker([busLocation.lat, busLocation.lng], { icon: customBusIcon }).addTo(mapRef.current);
+      } else {
+        busMarkerRef.current.setLatLng([busLocation.lat, busLocation.lng]);
       }
     }
   }, [busLocation, mapRef.current]);
-  
-  // Fit map to the entire route when available
-  useEffect(() => {
-      if (mapRef.current && routeCoordinates.length > 0) {
-        const bounds = latLngBounds(routeCoordinates);
-        mapRef.current.fitBounds(bounds, { padding: [50, 50] });
-      }
-  }, [routeCoordinates, mapRef.current]);
 
+  // Update college marker
+  useEffect(() => {
+    if (mapRef.current && collegeLocation) {
+      if (!collegeMarkerRef.current) {
+        collegeMarkerRef.current = marker([collegeLocation.lat, collegeLocation.lng], { icon: customCollegeIcon }).addTo(mapRef.current)
+          .bindPopup("St. Peter's Engineering College");
+      } else {
+        collegeMarkerRef.current.setLatLng([collegeLocation.lat, collegeLocation.lng]);
+      }
+    }
+  }, [collegeLocation, mapRef.current]);
+  
+  // Draw route
+  useEffect(() => {
+    if (mapRef.current) {
+      // Remove old polyline if it exists
+      if (routePolylineRef.current) {
+        mapRef.current.removeLayer(routePolylineRef.current);
+      }
+      
+      if(routeCoordinates.length > 0) {
+        // Add new polyline
+        const route = polyline(routeCoordinates, { color: 'hsl(var(--primary))', weight: 6, opacity: 0.8 });
+        route.addTo(mapRef.current);
+        routePolylineRef.current = route;
+        
+        // Fit map to the entire route
+        const bounds = latLngBounds(routeCoordinates);
+        if (bounds.isValid()) {
+            mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+        }
+      }
+    }
+  }, [routeCoordinates, mapRef.current]);
 
   const apiKey = process.env.NEXT_PUBLIC_OPENROUTESERVICE_API_KEY;
 
   if (!apiKey) {
     return (
       <div className="w-full h-full relative bg-muted flex items-center justify-center">
-        <Image 
-          src="https://placehold.co/1200x800.png" 
-          alt="Map placeholder" 
-          fill
-          style={{objectFit: "cover"}}
-          data-ai-hint="street map"
-        />
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
             <div className="text-center text-white p-4 bg-black/70 rounded-lg">
                 <h3 className="font-bold text-lg mb-2">Map Unavailable</h3>
@@ -133,9 +162,8 @@ const MapComponent = ({ userLocation, busLocation, onMapReady, routeCoordinates 
   }
 
   return (
-    <div className="w-full h-full" id="map">
-    </div>
+    <div className="w-full h-full" id="map" />
   );
 };
 
-export default MapComponent;
+export default React.memo(MapComponent);
