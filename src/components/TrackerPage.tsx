@@ -47,6 +47,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
   const [eta, setEta] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [route, setRoute] = useState<LatLng[]>([]);
+  const [remainingRoute, setRemainingRoute] = useState<LatLng[]>([]);
   const [map, setMap] = useState<LeafletMap | null>(null);
   const [showArrivalAlert, setShowArrivalAlert] = useState(false);
   const [journeyStage, setJourneyStage] = useState<'toUser' | 'toCollege'>('toUser');
@@ -54,7 +55,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
   
   const routeIndexRef = useRef(0);
   const simulationIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const notificationSentRef = useRef({ user: false, college: false });
+  const notificationSentRef = useRef({ user: false, college: false, fiveMin: false });
 
   const { toast } = useToast();
 
@@ -195,7 +196,15 @@ export default function TrackerPage({ busId }: { busId: string }) {
     }
   }, [arrivalStatus, toast, busId]);
 
-  
+  // Update remaining route as bus moves
+  useEffect(() => {
+    if (route.length > 0 && busData && routeIndexRef.current < route.length) {
+      // Create remaining route from current bus position to destination
+      const remaining = route.slice(routeIndexRef.current);
+      setRemainingRoute(remaining);
+    }
+  }, [route, busData, routeIndexRef.current]);
+
   useEffect(() => {
     if (userLocation && busData && route.length > 0 && typeof window !== 'undefined' && window.L) {
       let remainingDistance = 0;
@@ -212,6 +221,15 @@ export default function TrackerPage({ busId }: { busId: string }) {
 
       const calculatedEta = calculateETA(remainingDistance, busData.speed, trafficData?.level);
       setEta(calculatedEta);
+
+      // 5-minute warning (only for user pickup)
+      if (calculatedEta !== null && calculatedEta <= 5 && calculatedEta > 1 && journeyStage === 'toUser' && !notificationSentRef.current.fiveMin) {
+        toast({
+          title: "Bus Approaching!",
+          description: `Bus ${busId} is about ${Math.round(calculatedEta)} minutes away from your location. Get ready!`,
+        });
+        notificationSentRef.current.fiveMin = true;
+      }
 
       const notificationKey = journeyStage === 'toUser' ? 'user' : 'college';
       if (calculatedEta !== null && calculatedEta <= 1 && !notificationSentRef.current[notificationKey]) {
@@ -237,7 +255,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
 
   const handleRestartJourney = () => {
     toast({ title: 'New Journey Started', description: `Bus ${busId} has left the college.` });
-    notificationSentRef.current = { user: false, college: false };
+    notificationSentRef.current = { user: false, college: false, fiveMin: false };
     setShowArrivalAlert(false);
     setJourneyStage('toUser');
     setRoute([]);
@@ -256,57 +274,106 @@ export default function TrackerPage({ busId }: { busId: string }) {
   
   return (
     <div className="relative h-screen w-screen overflow-hidden">
-        <MapComponent 
-            userLocation={userLocation} 
-            busLocation={busData?.location}
-            collegeLocation={COLLEGE_LOCATION}
-            onMapReady={handleMapReady}
-            routeCoordinates={route}
+        <MapComponent
+          userLocation={userLocation}
+          busLocation={busData?.location}
+          collegeLocation={COLLEGE_LOCATION}
+          onMapReady={setMap}
+          routeCoordinates={route}
+          remainingRoute={remainingRoute}
+          busSpeed={busData?.speed}
+          eta={eta || undefined}
         />
       
-      <div className="absolute top-4 left-4 z-[1000] w-full max-w-sm">
-        <Card className="shadow-2xl">
-          <CardHeader>
-            <CardTitle className="font-headline flex items-center gap-2"><Bus className="text-primary"/> Bus {busId} Status</CardTitle>
+      <div className="absolute top-6 left-6 z-[1000] w-full max-w-sm">
+        <Card className="bg-background/95 backdrop-blur-md border-0 shadow-xl">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-xl font-bold flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-xl">
+                <Bus className="text-primary w-5 h-5"/> 
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span>Bus {busId}</span>
+                  <div className={`w-2 h-2 rounded-full ${busData?.status === 'finished' ? 'bg-green-500' : 'bg-blue-500 animate-pulse'}`} />
+                </div>
+                <p className="text-sm font-normal text-muted-foreground mt-1">
+                  {journeyStage === 'toUser' ? 'Coming to you' : 'Heading to college'}
+                </p>
+              </div>
+            </CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold flex items-center gap-2"><Clock size={16}/> ETA to {journeyStage === 'toUser' ? 'You' : 'College'}</span>
-              {renderETA()}
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="font-semibold flex items-center gap-2"><TrafficCone size={16}/> Traffic</span>
-              <span className="capitalize">{trafficData?.level || 'Normal'}</span>
-            </div>
-             <div className="flex items-center justify-between">
-              <span className="font-semibold flex items-center gap-2"><School size={16}/> Destination</span>
-              <span className={`capitalize font-bold text-primary`}>
-                St. Peter's College
-              </span>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 gap-3">
+              <div className="p-3 bg-muted/30 rounded-xl">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">ETA to {journeyStage === 'toUser' ? 'You' : 'College'}</span>
+                  <Clock size={14} className="text-muted-foreground"/>
+                </div>
+                <div className="text-lg font-bold">
+                  {renderETA()}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-muted/30 rounded-xl">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Speed</span>
+                    <TrafficCone size={14} className="text-muted-foreground"/>
+                  </div>
+                  <div className="text-sm font-semibold">{busData?.speed || 0} km/h</div>
+                </div>
+                
+                <div className="p-3 bg-muted/30 rounded-xl">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Traffic</span>
+                  </div>
+                  <div className="text-sm font-semibold capitalize">{trafficData?.level || 'Normal'}</div>
+                </div>
+              </div>
+              
+              <div className="p-3 bg-primary/5 rounded-xl border border-primary/10">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Destination</span>
+                  <School size={14} className="text-primary"/>
+                </div>
+                <div className="text-sm font-bold text-primary">St. Peter's College</div>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="absolute top-4 right-4 z-[1000] flex gap-2 items-center bg-background/80 backdrop-blur-sm rounded-full shadow-2xl p-1">
-         <Button variant="ghost" size="icon" className="rounded-full" onClick={() => router.push('/bus-selection')}>
-            <Bus size={20} />
-            <span className="sr-only">Change Bus</span>
-         </Button>
-         <Separator orientation='vertical' className='h-6'/>
-         <Button variant="ghost" className='rounded-full p-2 h-auto'>
-            <Avatar className='w-7 h-7'>
+      <div className="absolute top-6 right-6 z-[1000] flex gap-3 items-center">
+        <div className="flex gap-2 items-center bg-background/95 backdrop-blur-md rounded-2xl shadow-xl p-2 border-0">
+          <Button variant="ghost" size="sm" className="rounded-xl h-9 px-3 gap-2" onClick={() => router.push('/bus-selection')}>
+            <Bus size={16} />
+            <span className="hidden sm:inline text-sm font-medium">Change Bus</span>
+          </Button>
+          
+          <Separator orientation='vertical' className='h-6 mx-1'/>
+          
+          <div className="flex items-center gap-2 px-2">
+            <Avatar className='w-8 h-8 ring-2 ring-background'>
                 <AvatarImage src={user?.photoURL || undefined} />
-                <AvatarFallback><UserIcon size={16}/></AvatarFallback>
+                <AvatarFallback className='bg-primary/10'><UserIcon size={14}/></AvatarFallback>
             </Avatar>
-            <div className="text-sm pr-2 pl-2">
-                <p className="font-semibold">{user?.displayName || user?.email}</p>
+            <div className="hidden sm:block">
+                <p className="text-sm font-semibold leading-none">{user?.displayName?.split(' ')[0] || 'Student'}</p>
+                <p className="text-xs text-muted-foreground mt-1">Online</p>
             </div>
-        </Button>
-        <ThemeToggle />
-        <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground hover:text-foreground rounded-full">
-            <LogOut size={20} />
-        </Button>
+          </div>
+          
+          <Separator orientation='vertical' className='h-6 mx-1'/>
+          
+          <div className="flex gap-1">
+            <ThemeToggle />
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground rounded-xl h-9 w-9 p-0">
+                <LogOut size={16} />
+                <span className="sr-only">Logout</span>
+            </Button>
+          </div>
+        </div>
       </div>
       
       {showArrivalAlert && (
@@ -345,17 +412,17 @@ export default function TrackerPage({ busId }: { busId: string }) {
       )}
 
       {error && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-md">
-            <Card className="shadow-2xl bg-destructive/90 text-destructive-foreground">
-                <CardContent className="p-4 flex items-center gap-4">
-                    <AlertTriangle className="h-6 w-6 text-destructive-foreground flex-shrink-0" />
-                    <div>
-                        <p className="font-bold">
-                           Alert
-                        </p>
-                        <p className="text-sm">
-                            {error}
-                        </p>
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-md mx-6">
+            <Card className="bg-destructive/95 backdrop-blur-md border-0 shadow-xl text-destructive-foreground">
+                <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                        <div className="p-2 bg-destructive-foreground/10 rounded-xl">
+                            <AlertTriangle className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1">
+                            <p className="font-semibold text-sm mb-1">Connection Error</p>
+                            <p className="text-xs opacity-90">{error}</p>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
@@ -363,17 +430,45 @@ export default function TrackerPage({ busId }: { busId: string }) {
       )}
 
       {(!userLocation || !busData) && (
-        <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-[2000]">
-            <Card className="p-8 text-center">
-                <CardHeader>
-                    <CardTitle>Connecting to NaviLoop...</CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col items-center gap-4">
-                    <div className="flex items-center gap-2">
-                        {!userLocation ? <Skeleton className="h-5 w-40"/> : <span className="text-green-600 font-bold">User Location OK</span>}
+        <div className="absolute inset-0 bg-background/95 backdrop-blur-sm flex items-center justify-center z-[2000]">
+            <Card className="bg-background/50 backdrop-blur-md border-0 shadow-2xl max-w-sm w-full mx-6">
+                <CardContent className="p-8 text-center">
+                    <div className="p-4 bg-primary/10 rounded-2xl w-fit mx-auto mb-6">
+                        <Bus className="h-8 w-8 text-primary animate-pulse" />
                     </div>
-                     <div className="flex items-center gap-2">
-                        {!busData ? <Skeleton className="h-5 w-40"/> : <span className="text-green-600 font-bold">Bus Feed OK</span>}
+                    <h3 className="text-xl font-bold mb-2">Connecting to NaviLoop</h3>
+                    <p className="text-muted-foreground text-sm mb-6">Setting up your real-time tracking...</p>
+                    
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl">
+                            <span className="text-sm font-medium">Location Services</span>
+                            {!userLocation ? (
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
+                                    <span className="text-xs text-muted-foreground">Connecting...</span>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-green-500 rounded-full" />
+                                    <span className="text-xs font-medium text-green-600">Connected</span>
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl">
+                            <span className="text-sm font-medium">Bus Tracking</span>
+                            {!busData ? (
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
+                                    <span className="text-xs text-muted-foreground">Connecting...</span>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-green-500 rounded-full" />
+                                    <span className="text-xs font-medium text-green-600">Connected</span>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </CardContent>
             </Card>
