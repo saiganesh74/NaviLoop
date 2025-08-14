@@ -6,13 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Bus, Clock, LogOut, TrafficCone, AlertTriangle, User as UserIcon, School } from 'lucide-react';
-import { calculateETA } from '@/lib/utils';
+import { calculateETA, AlertState, hasExitedCollegeBoundary, shouldShowFiveMinuteAlert } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
 import dynamic from 'next/dynamic';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { getRoute } from '@/ai/flows/routing-flow';
 import { ThemeToggle } from './ThemeToggle';
+import AlertSystem from './AlertSystem';
 import type { LatLng, Map as LeafletMap } from 'leaflet';
 import { Separator } from './ui/separator';
 
@@ -52,6 +53,17 @@ export default function TrackerPage({ busId }: { busId: string }) {
   const [showArrivalAlert, setShowArrivalAlert] = useState(false);
   const [journeyStage, setJourneyStage] = useState<'toUser' | 'toCollege'>('toUser');
   const [arrivalStatus, setArrivalStatus] = useState<'user' | 'college' | null>(null);
+  
+  // Enhanced alert state management
+  const [alertState, setAlertState] = useState<AlertState>({
+    fiveMinuteWarning: false,
+    oneMinuteWarning: false,
+    arrivalWarning: false,
+    collegeExitWarning: false,
+  });
+  const [showFiveMinuteAlert, setShowFiveMinuteAlert] = useState(false);
+  const [showCollegeExitAlert, setShowCollegeExitAlert] = useState(false);
+  const previousBusLocationRef = useRef<Location | null>(null);
   
   const routeIndexRef = useRef(0);
   const simulationIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -205,6 +217,7 @@ export default function TrackerPage({ busId }: { busId: string }) {
     }
   }, [route, busData, routeIndexRef.current]);
 
+  // Enhanced ETA calculation and alert system
   useEffect(() => {
     if (userLocation && busData && route.length > 0 && typeof window !== 'undefined' && window.L) {
       let remainingDistance = 0;
@@ -222,27 +235,46 @@ export default function TrackerPage({ busId }: { busId: string }) {
       const calculatedEta = calculateETA(remainingDistance, busData.speed, trafficData?.level);
       setEta(calculatedEta);
 
-      // 5-minute warning (only for user pickup)
-      if (calculatedEta !== null && calculatedEta <= 5 && calculatedEta > 1 && journeyStage === 'toUser' && !notificationSentRef.current.fiveMin) {
+      // Enhanced 5-minute warning popup (only for user pickup)
+      if (calculatedEta !== null && calculatedEta <= 5 && calculatedEta > 3 && journeyStage === 'toUser' && !alertState.fiveMinuteWarning) {
+        setShowFiveMinuteAlert(true);
+        setAlertState(prev => ({ ...prev, fiveMinuteWarning: true }));
         toast({
           title: "Bus Approaching!",
-          description: `Bus ${busId} is about ${Math.round(calculatedEta)} minutes away from your location. Get ready!`,
+          description: `Bus ${busId} is about ${Math.round(calculatedEta)} minutes away from your location. Check the popup for details!`,
         });
-        notificationSentRef.current.fiveMin = true;
       }
 
-      const notificationKey = journeyStage === 'toUser' ? 'user' : 'college';
-      if (calculatedEta !== null && calculatedEta <= 1 && !notificationSentRef.current[notificationKey]) {
+      // One minute warning
+      if (calculatedEta !== null && calculatedEta <= 1 && !alertState.oneMinuteWarning) {
+        setAlertState(prev => ({ ...prev, oneMinuteWarning: true }));
         toast({
           title: journeyStage === 'toUser' ? "Bus is Arriving Soon!" : "Approaching College!",
           description: journeyStage === 'toUser' 
             ? `Bus ${busId} is less than a minute away from your location.`
             : `Bus ${busId} is less than a minute away from the college.`,
         });
-        notificationSentRef.current[notificationKey] = true;
       }
     }
-  }, [userLocation, busData, trafficData, toast, busId, route, journeyStage]);
+  }, [userLocation, busData, trafficData, toast, busId, route, journeyStage, alertState]);
+
+  // College boundary exit detection
+  useEffect(() => {
+    if (busData?.location) {
+      // Check if bus has exited college boundary
+      if (hasExitedCollegeBoundary(busData.location, previousBusLocationRef.current) && !alertState.collegeExitWarning) {
+        setShowCollegeExitAlert(true);
+        setAlertState(prev => ({ ...prev, collegeExitWarning: true }));
+        toast({
+          title: "Bus Departed from College",
+          description: `Bus ${busId} has left the college and is now on route!`,
+        });
+      }
+      
+      // Update previous location for next comparison
+      previousBusLocationRef.current = busData.location;
+    }
+  }, [busData?.location, alertState.collegeExitWarning, busId, toast]);
 
   const handleLogout = async () => {
     await logout();
@@ -260,6 +292,17 @@ export default function TrackerPage({ busId }: { busId: string }) {
     setJourneyStage('toUser');
     setRoute([]);
     setBusData(null);
+    
+    // Reset all alert states
+    setAlertState({
+      fiveMinuteWarning: false,
+      oneMinuteWarning: false,
+      arrivalWarning: false,
+      collegeExitWarning: false,
+    });
+    setShowFiveMinuteAlert(false);
+    setShowCollegeExitAlert(false);
+    previousBusLocationRef.current = null;
   }
 
   const renderETA = () => {
@@ -368,6 +411,35 @@ export default function TrackerPage({ busId }: { busId: string }) {
           
           <div className="flex gap-1">
             <ThemeToggle />
+            {/* Debug buttons - remove in production */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={(e) => {
+                e.preventDefault();
+                console.log('🧪 Test 5-minute alert clicked!');
+                setShowFiveMinuteAlert(true);
+              }} 
+              className="text-orange-500 hover:text-orange-600 rounded-xl h-9 w-9 p-0"
+              title="Test 5min Alert"
+              type="button"
+            >
+                <Clock size={12} />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={(e) => {
+                e.preventDefault();
+                console.log('🧪 Test college exit alert clicked!');
+                setShowCollegeExitAlert(true);
+              }} 
+              className="text-blue-500 hover:text-blue-600 rounded-xl h-9 w-9 p-0"
+              title="Test College Exit Alert"
+              type="button"
+            >
+                <School size={12} />
+            </Button>
             <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground rounded-xl h-9 w-9 p-0">
                 <LogOut size={16} />
                 <span className="sr-only">Logout</span>
@@ -474,6 +546,16 @@ export default function TrackerPage({ busId }: { busId: string }) {
             </Card>
         </div>
       )}
+      
+      {/* Enhanced Alert System */}
+      <AlertSystem
+        busId={busId}
+        fiveMinuteAlert={showFiveMinuteAlert}
+        onFiveMinuteAlertClose={() => setShowFiveMinuteAlert(false)}
+        collegeExitAlert={showCollegeExitAlert}
+        onCollegeExitAlertClose={() => setShowCollegeExitAlert(false)}
+        eta={eta || 5}
+      />
     </div>
   );
 }
