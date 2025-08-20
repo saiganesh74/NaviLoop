@@ -1,5 +1,5 @@
 'use client';
-// 123
+
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { BusIcon } from 'lucide-react';
+import { BusIcon, MapPin, Clock, Shield, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
@@ -94,74 +94,201 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="mx-auto max-w-sm w-full relative">
-        <div className="absolute top-4 right-4">
-            <ThemeToggle />
+    <div className="min-h-screen flex">
+      {/* Left Side - Hero Section */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='3'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+          }} />
         </div>
-        <CardHeader className="text-center">
-            <div className="flex justify-center items-center mb-4">
-                <BusIcon className="h-10 w-10 text-primary" />
+        
+        <div className="relative z-10 flex flex-col justify-center w-full px-12 py-12">
+          <div className="max-w-md mx-auto">
+            {/* Brand Header */}
+            <div className="flex items-center gap-3 mb-8">
+              <div className="p-3 bg-white/10 backdrop-blur-sm rounded-2xl">
+                <BusIcon className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold">NaviLoop</h1>
+                <p className="text-blue-100 text-sm">Smart Bus Tracking</p>
+              </div>
             </div>
-          <CardTitle className="text-2xl font-headline">NaviLoop</CardTitle>
-          <CardDescription>
-            Sign in to track your bus in real-time
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-            <form onSubmit={handleEmailLogin} className="grid gap-4">
-                <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input 
-                        id="email" 
-                        type="email" 
-                        placeholder="abcd@example.com" 
-                        required 
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                    />
+            
+            {/* Main Headline */}
+            <h2 className="text-4xl font-bold mb-6 leading-tight">
+              Track Your Bus in 
+              <span className="bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent"> Real-Time</span>
+            </h2>
+            
+            {/* Description */}
+            <p className="text-blue-100 text-lg mb-8 leading-relaxed">
+              Never miss your bus again. Get live updates, accurate ETAs, and seamless college transportation tracking.
+            </p>
+            
+            {/* Features List */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-lg">
+                  <MapPin className="h-5 w-5" />
                 </div>
-                <div className="grid gap-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input 
-                        id="password" 
-                        type="password" 
-                        required 
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
+                <span>Real-time GPS tracking</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-lg">
+                  <Clock className="h-5 w-5" />
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Signing in..." : "Sign in"}
+                <span>Accurate arrival predictions</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-lg">
+                  <Shield className="h-5 w-5" />
+                </div>
+                <span>Secure & reliable service</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Floating Bus Animation */}
+          <div className="absolute bottom-8 right-8 opacity-20">
+            <div className="animate-bounce">
+              <BusIcon className="h-24 w-24" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side - Login Form */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 py-12 lg:px-8 bg-background relative">
+        {/* Theme Toggle */}
+        <div className="absolute top-6 right-6">
+          <ThemeToggle />
+        </div>
+        
+        {/* Mobile Header */}
+        <div className="lg:hidden text-center mb-8">
+          <div className="flex justify-center items-center gap-3 mb-4">
+            <div className="p-3 bg-primary/10 rounded-2xl">
+              <BusIcon className="h-8 w-8 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">NaviLoop</h1>
+              <p className="text-sm text-muted-foreground">Smart Bus Tracking</p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Login Card */}
+        <div className="w-full max-w-md mx-auto">
+          <Card className="border-0 shadow-2xl bg-card/50 backdrop-blur-sm">
+            <CardHeader className="space-y-1 pb-6">
+              <CardTitle className="text-3xl font-bold text-center">
+                Welcome Back
+              </CardTitle>
+              <CardDescription className="text-center text-base">
+                Sign in to access your bus tracking dashboard
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent className="space-y-6">
+              {/* Email/Password Form */}
+              <form onSubmit={handleEmailLogin} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm font-medium">
+                    Email Address
+                  </Label>
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="student@college.edu" 
+                    required 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-11 transition-all duration-200 focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-sm font-medium">
+                    Password
+                  </Label>
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    placeholder="••••••••"
+                    required 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-11 transition-all duration-200 focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full h-11 text-base font-semibold bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 transition-all duration-200 shadow-lg hover:shadow-xl" 
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Zap className="mr-2 h-4 w-4 animate-spin" />
+                      Signing in...
+                    </>
+                  ) : (
+                    "Sign in to Dashboard"
+                  )}
                 </Button>
-            </form>
-            <div className="relative my-4">
+              </form>
+              
+              {/* Divider */}
+              <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
+                  <span className="w-full border-t border-border/50" />
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
+                <div className="relative flex justify-center text-sm">
+                  <span className="bg-background px-4 text-muted-foreground font-medium">
                     Or continue with
-                    </span>
+                  </span>
                 </div>
-            </div>
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={handleGoogleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              'Signing in...'
-            ) : (
-                <>
-                    <GoogleIcon className="mr-2 h-5 w-5" />
-                    Sign in with Google
-                </>
-            )}
-          </Button>
-        </CardContent>
-      </Card>
+              </div>
+              
+              {/* Google Sign In */}
+              <Button
+                variant="outline"
+                className="w-full h-11 text-base font-semibold border-2 hover:bg-muted/50 transition-all duration-200"
+                onClick={handleGoogleLogin}
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Zap className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  <>
+                    <GoogleIcon className="mr-3 h-5 w-5" />
+                    Continue with Google
+                  </>
+                )}
+              </Button>
+              
+              <div className="text-center pt-4">
+                <p className="text-sm text-muted-foreground">
+                  Secure login powered by Firebase Authentication
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Footer Text */}
+          <div className="mt-8 text-center">
+            <p className="text-xs text-muted-foreground">
+              By signing in, you agree to our Terms of Service and Privacy Policy
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
