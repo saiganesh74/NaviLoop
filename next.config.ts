@@ -8,7 +8,7 @@ const withPWA = require('next-pwa')({
   skipWaiting: true,
   runtimeCaching: [
     {
-    // eiofjsiodsfflioui
+    // eiofjsiodsffliou
       urlPattern: /^https?.*/, 
       handler: 'NetworkFirst',
       options: {
