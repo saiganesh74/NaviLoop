@@ -40,23 +40,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'a.tile.openstreetmap.org',
+        hostname: 'tile.openstreetmap.org',
         port: '',
         pathname: '/**',
       },
-       {
-        protocol: 'https',
-        hostname: 'b.tile.openstreetmap.org',
-        port: '',
-        pathname: '/**',
-      },
-       {
-        protocol: 'https',
-        hostname: 'c.tile.openstreetmap.org',
-        port: '',
-        pathname: '/**',
-      },
-       {
+      {
         protocol: 'https',
         hostname: 'a.basemaps.cartocdn.com',
         port: '',

@@ -211,7 +211,7 @@ const MapComponent = ({ userLocation, busLocation, collegeLocation, onMapReady, 
   const [isUserOnBus, setIsUserOnBus] = useState(false);
   const [currentTraffic, setCurrentTraffic] = useState<TrafficData>({ level: 'low', factor: 1.0, color: '#10b981' });
 
-  const lightTileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const lightTileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   const darkTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
   
   useEffect(() => {
